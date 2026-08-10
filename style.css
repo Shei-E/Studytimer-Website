@@ -741,11 +741,8 @@ body {
   background: transparent;
   border: none;
   color: var(--theme-summary-text);
-  font-family: inherit;
-  font-size: 1.1rem;
-  font-weight: 800;
   cursor: pointer;
-  padding: 0 4px;
+  padding: 2px 4px;
   margin-left: auto;
   outline: none;
   opacity: 0.7;
@@ -756,9 +753,16 @@ body {
   justify-content: center;
 }
 
+.session-delete-btn svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.2;
+  pointer-events: none;
+}
+
 .session-delete-btn:hover {
   opacity: 1;
-  transform: scale(1.25);
+  transform: scale(1.2);
   color: #DF5346;
 }
 
