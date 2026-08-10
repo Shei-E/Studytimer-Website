@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Work - Pomodoro Timer</title>
+  <!-- Google Fonts for crisp modern typography matching the design -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-work">
+  <div class="app-viewport">
+    <!-- Main Pomodoro Card -->
+    <main class="pomodoro-card">
+      
+      <!-- Top Mode Navigation Tabs -->
+      <nav class="mode-tabs" aria-label="Timer Mode Switcher">
+        <button type="button" class="tab-btn active" id="tabWork" data-mode="work">Work</button>
+        <button type="button" class="tab-btn" id="tabBreak" data-mode="break">Break</button>
+      </nav>
+
+      <!-- Main Display Box (Clickable to Set Timer & Inline Time Editing) -->
+      <section class="timer-display-box" id="timerDisplayBox" title="Click to Set Study Time (Minutes)">
+        <div class="timer-readout" id="timerReadout">SET TIMER</div>
+        <input type="number" id="inlineTimeInput" class="inline-time-input" min="0" max="360" placeholder="Mins" style="display: none;">
+        <div class="ot-badge" id="otBadge" style="display: none;">+00:00 OT</div>
+        
+        <!-- Square Cancel Timer Button (C8CFB4) at bottom right of SET TIMER display -->
+        <button type="button" class="cancel-timer-btn" id="cancelTimerBtn" title="Cancel Active Timer" aria-label="Cancel Timer"></button>
+      </section>
+
+      <!-- Overtime Mode Checkbox with Tooltip -->
+      <div class="overtime-option" title="Starts counting up when a session ends until you're finished with your work">
+        <label class="custom-checkbox">
+          <input type="checkbox" id="overtimeCheckbox" checked>
+          <span class="checkbox-box">
+            <svg class="check-icon" viewBox="0 0 24 24">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </span>
+          <span class="checkbox-label">OVERTIME MODE</span>
+        </label>
+        <div class="ot-tooltip">Starts counting up when a session ends until you're finished with your work</div>
+      </div>
+
+      <!-- Main Action Circle Button (Play / Pause / Checkmark) -->
+      <div class="action-btn-container">
+        <button type="button" class="action-btn" id="actionBtn" aria-label="Start Timer">
+          <!-- Play Icon (Rounded Triangle matching mockup) -->
+          <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M7.5 3.824c-1.333-.77-3 .192-3 1.732v12.888c0 1.54 1.667 2.502 3 1.732l11.159-6.444c1.333-.77 1.333-2.694 0-3.464L7.5 3.824z" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+          <!-- Pause Icon -->
+          <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+            <rect x="5" y="4" width="4" height="16" rx="1"></rect>
+            <rect x="15" y="4" width="4" height="16" rx="1"></rect>
+          </svg>
+          <!-- Checkmark Icon -->
+          <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Task Input Bar & Task List -->
+      <div class="task-section">
+        <div class="task-input-wrapper">
+          <label for="taskInput" class="task-label">Tasks:</label>
+          <input type="text" id="taskInput" class="task-input" placeholder="Type task and press Enter..." autocomplete="off">
+        </div>
+        <!-- Created Tasks List Container -->
+        <ul class="task-list" id="taskList">
+          <!-- Dynamically populated bullet point tasks -->
+        </ul>
+      </div>
+
+      <!-- Analytics Button -->
+      <div class="analytics-btn-container">
+        <button type="button" class="analytics-btn" id="analyticsBtn" aria-label="Toggle Session Summary">
+          <svg class="analytics-icon" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="3" y="12" width="4" height="9" rx="1"></rect>
+            <rect x="10" y="7" width="4" height="14" rx="1"></rect>
+            <rect x="17" y="3" width="4" height="18" rx="1"></rect>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Analytics / Session Summary Popover -->
+      <div class="summary-popover" id="summaryPopover" style="display: none;">
+        <div class="summary-content">
+          <div class="summary-header">
+            <h3>Summary</h3>
+            <div class="stat-row">
+              <span class="stat-label">Total work time:</span>
+              <span class="stat-value" id="statTotalTime">00 hrs 00 mins</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Sessions completed:</span>
+              <span class="stat-value" id="statSessionCount">00</span>
+            </div>
+          </div>
+
+          <hr class="summary-divider">
+
+          <div class="sessions-section">
+            <h4 class="sessions-title">Sessions</h4>
+            <div class="sessions-grid" id="sessionsGrid">
+              <!-- Dynamically populated session timestamps -->
+              <div class="no-sessions">No completed sessions yet</div>
+            </div>
+            <div class="sessions-tip" id="sessionsTip" style="display: none;">Tip: double click to edit sessions</div>
+          </div>
+
+          <!-- Summary Footer: Reset Stats Button on left, Pagination Controls on right -->
+          <div class="summary-footer">
+            <button type="button" class="reset-stats-btn" id="resetStatsBtn" title="Reset all statistics">Reset Stats</button>
+            <div class="pagination-controls">
+              <button type="button" class="page-btn" id="prevPageBtn" disabled aria-label="Previous Page">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="15 18 9 12 15 6 15 18"></polygon>
+                </svg>
+              </button>
+              <span class="page-indicator" id="pageIndicator">1 / 1</span>
+              <button type="button" class="page-btn" id="nextPageBtn" disabled aria-label="Next Page">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="9 18 15 12 9 6 9 18"></polygon>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- Popover Triangle Arrow pointing down -->
+        <div class="popover-arrow"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
