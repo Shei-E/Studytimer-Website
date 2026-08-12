@@ -844,6 +844,7 @@ body {
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
+  margin-bottom: -35px;
   padding-top: 12px;
   border-top: 1px dashed rgba(0, 0, 0, 0.15);
 }
@@ -913,7 +914,7 @@ body {
 /* Popover Triangle Arrow Pointing Down */
 .popover-arrow {
   position: absolute;
-  bottom: -10px;
+  bottom: -8px;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
