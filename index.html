@@ -104,30 +104,62 @@
 
           <hr class="summary-divider">
 
-          <div class="sessions-section">
-            <h4 class="sessions-title">Sessions</h4>
+          <!-- Inner Tab Navigation -->
+          <div class="summary-inner-tabs">
+            <button type="button" class="summary-inner-tab active" id="summaryTabSessions">Sessions</button>
+            <button type="button" class="summary-inner-tab" id="summaryTabDaily">Daily Log</button>
+          </div>
+
+          <!-- Sessions Panel -->
+          <div id="sessionsPanel">
             <div class="sessions-grid" id="sessionsGrid">
               <!-- Dynamically populated session timestamps -->
               <div class="no-sessions">No completed sessions yet</div>
             </div>
             <div class="sessions-tip" id="sessionsTip" style="display: none;">Tip: double click to edit sessions</div>
+
+            <!-- Summary Footer: Reset Stats Button on left, Pagination Controls on right -->
+            <div class="summary-footer">
+              <button type="button" class="reset-stats-btn" id="resetStatsBtn" title="Reset all statistics">Reset Stats</button>
+              <div class="pagination-controls">
+                <button type="button" class="page-btn" id="prevPageBtn" disabled aria-label="Previous Page">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="15 18 9 12 15 6 15 18"></polygon>
+                  </svg>
+                </button>
+                <span class="page-indicator" id="pageIndicator">1 / 1</span>
+                <button type="button" class="page-btn" id="nextPageBtn" disabled aria-label="Next Page">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="9 18 15 12 9 6 9 18"></polygon>
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
 
-          <!-- Summary Footer: Reset Stats Button on left, Pagination Controls on right -->
-          <div class="summary-footer">
-            <button type="button" class="reset-stats-btn" id="resetStatsBtn" title="Reset all statistics">Reset Stats</button>
-            <div class="pagination-controls">
-              <button type="button" class="page-btn" id="prevPageBtn" disabled aria-label="Previous Page">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="15 18 9 12 15 6 15 18"></polygon>
-                </svg>
-              </button>
-              <span class="page-indicator" id="pageIndicator">1 / 1</span>
-              <button type="button" class="page-btn" id="nextPageBtn" disabled aria-label="Next Page">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="9 18 15 12 9 6 9 18"></polygon>
-                </svg>
-              </button>
+          <!-- Daily Log Panel -->
+          <div id="dailyPanel" style="display: none;">
+            <div class="sessions-grid" id="dailyLogGrid">
+              <!-- Dynamically populated daily log rows -->
+              <div class="no-sessions">No study days recorded yet</div>
+            </div>
+
+            <!-- Daily Log Footer -->
+            <div class="summary-footer">
+              <div></div><!-- spacer -->
+              <div class="pagination-controls">
+                <button type="button" class="page-btn" id="dailyPrevBtn" disabled aria-label="Previous Page">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="15 18 9 12 15 6 15 18"></polygon>
+                  </svg>
+                </button>
+                <span class="page-indicator" id="dailyPageIndicator">1 / 1</span>
+                <button type="button" class="page-btn" id="dailyNextBtn" disabled aria-label="Next Page">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="9 18 15 12 9 6 9 18"></polygon>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>

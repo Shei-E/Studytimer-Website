@@ -18,9 +18,13 @@
     timerInterval: null,
     sessionStartTimestamp: null,
     sessionsHistory: [], // Array of { id, startTime, endTime, workSec, otSec, totalSec }
+    dailyLog: {},        // Map of "YYYY-MM-DD" -> totalSeconds studied that day
     tasks: [], // Array of { id, text, completed }
     currentPage: 1,
-    pageSize: 6
+    pageSize: 6,
+    summaryTab: 'sessions', // 'sessions' | 'daily'
+    dailyLogPage: 1,
+    dailyLogPageSize: 6
   };
 
   // --- DOM Elements ---
@@ -47,6 +51,14 @@
   const prevPageBtn = document.getElementById('prevPageBtn');
   const nextPageBtn = document.getElementById('nextPageBtn');
   const pageIndicator = document.getElementById('pageIndicator');
+  const dailyLogGrid = document.getElementById('dailyLogGrid');
+  const dailyPrevBtn = document.getElementById('dailyPrevBtn');
+  const dailyNextBtn = document.getElementById('dailyNextBtn');
+  const dailyPageIndicator = document.getElementById('dailyPageIndicator');
+  const summaryTabSessions = document.getElementById('summaryTabSessions');
+  const summaryTabDaily = document.getElementById('summaryTabDaily');
+  const sessionsPanel = document.getElementById('sessionsPanel');
+  const dailyPanel = document.getElementById('dailyPanel');
 
   // --- Initialization ---
   function init() {
@@ -99,6 +111,14 @@
     } catch (e) {
       console.warn('Could not load sessions from localStorage:', e);
     }
+    try {
+      const storedLog = localStorage.getItem('pomodoro_daily_log');
+      if (storedLog) {
+        state.dailyLog = JSON.parse(storedLog);
+      }
+    } catch (e) {
+      console.warn('Could not load daily log from localStorage:', e);
+    }
   }
 
   function saveHistory() {
@@ -106,6 +126,11 @@
       localStorage.setItem('pomodoro_sessions', JSON.stringify(state.sessionsHistory));
     } catch (e) {
       console.warn('Could not save sessions to localStorage:', e);
+    }
+    try {
+      localStorage.setItem('pomodoro_daily_log', JSON.stringify(state.dailyLog));
+    } catch (e) {
+      console.warn('Could not save daily log to localStorage:', e);
     }
   }
 
@@ -176,6 +201,23 @@
     return `${h}:${m}`;
   }
 
+  // Study "day" runs 3:00 AM → 2:59 AM. Shift back 3 hours to get the correct date key.
+  function getDayKey(dateObj) {
+    const shifted = new Date(dateObj.getTime() - 3 * 60 * 60 * 1000);
+    const y = shifted.getFullYear();
+    const mo = String(shifted.getMonth() + 1).padStart(2, '0');
+    const d = String(shifted.getDate()).padStart(2, '0');
+    return `${y}-${mo}-${d}`;
+  }
+
+  // Format a day key "YYYY-MM-DD" into a human-readable label like "Mon, Aug 11"
+  function formatDayLabel(key) {
+    // Parse as local date (append T12:00 to avoid timezone shift on date-only strings)
+    const [y, mo, d] = key.split('-').map(Number);
+    const date = new Date(y, mo - 1, d, 12, 0, 0);
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
   // --- Core Timer Controller ---
   function startTimer() {
     if (state.timerState === 'running' || state.timerState === 'overtime') return;
@@ -234,7 +276,8 @@
     }
 
     if (elapsed > 0 && state.sessionStartTimestamp) {
-      const endTime = formatHHMM(new Date());
+      const now = new Date();
+      const endTime = formatHHMM(now);
       const workSec = Math.min(elapsed, state.workDuration || 0);
       const otSec = state.overtimeSeconds || 0;
 
@@ -247,6 +290,11 @@
         totalSec: elapsed,
         cancelled: true
       });
+
+      // Track in daily log (use workSec only, not overtime, for cancelled sessions)
+      const dayKey = getDayKey(now);
+      state.dailyLog[dayKey] = (state.dailyLog[dayKey] || 0) + workSec;
+
       saveHistory();
     }
 
@@ -314,7 +362,8 @@
   }
 
   function logCompletedSession() {
-    const endTime = formatHHMM(new Date());
+    const now = new Date();
+    const endTime = formatHHMM(now);
     const startTime = state.sessionStartTimestamp || endTime;
     const totalSec = state.workDuration + state.overtimeSeconds;
 
@@ -326,6 +375,10 @@
       otSec: state.overtimeSeconds,
       totalSec: totalSec
     });
+
+    // Track full session (work + overtime) in daily log
+    const dayKey = getDayKey(now);
+    state.dailyLog[dayKey] = (state.dailyLog[dayKey] || 0) + totalSec;
 
     state.overtimeSeconds = 0;
     state.sessionStartTimestamp = null;
@@ -697,7 +750,7 @@
 
   // --- Summary & Analytics Popover Renderer ---
   function renderSummary() {
-    // Total Work Time Calculation
+    // Total Work Time Calculation (all-time)
     let totalWorkSec = 0;
     state.sessionsHistory.forEach(s => {
       totalWorkSec += (s.totalSec || s.workSec || 0);
@@ -708,6 +761,21 @@
     statTotalTime.textContent = `${String(hrs).padStart(2, '0')} hrs ${String(mins).padStart(2, '0')} mins`;
     statSessionCount.textContent = String(state.sessionsHistory.length).padStart(2, '0');
 
+    // --- Tab switching ---
+    const isSessionsTab = state.summaryTab === 'sessions';
+    if (summaryTabSessions) summaryTabSessions.classList.toggle('active', isSessionsTab);
+    if (summaryTabDaily) summaryTabDaily.classList.toggle('active', !isSessionsTab);
+    if (sessionsPanel) sessionsPanel.style.display = isSessionsTab ? '' : 'none';
+    if (dailyPanel) dailyPanel.style.display = isSessionsTab ? 'none' : '';
+
+    if (isSessionsTab) {
+      renderSessionsPanel();
+    } else {
+      renderDailyLogPanel();
+    }
+  }
+
+  function renderSessionsPanel() {
     // Pagination Calculation
     const totalItems = state.sessionsHistory.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / state.pageSize));
@@ -722,9 +790,7 @@
     const sessionsTip = document.getElementById('sessionsTip');
 
     if (totalItems === 0) {
-      sessionsGrid.innerHTML = `
-        <div class="no-sessions">No completed sessions yet</div>
-      `;
+      sessionsGrid.innerHTML = `<div class="no-sessions">No completed sessions yet</div>`;
       if (sessionsTip) sessionsTip.style.display = 'none';
       return;
     }
@@ -752,6 +818,55 @@
       itemEl.title = 'Double-click to edit';
       itemEl.addEventListener('dblclick', () => editSession(absoluteIndex, itemEl, session));
       sessionsGrid.appendChild(itemEl);
+    });
+  }
+
+  function renderDailyLogPanel() {
+    if (!dailyLogGrid) return;
+    dailyLogGrid.innerHTML = '';
+
+    // Sort entries newest first (by day key, descending)
+    const entries = Object.entries(state.dailyLog)
+      .sort((a, b) => b[0].localeCompare(a[0]));
+
+    const totalItems = entries.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / state.dailyLogPageSize));
+    if (state.dailyLogPage > totalPages) state.dailyLogPage = totalPages;
+
+    if (dailyPageIndicator) dailyPageIndicator.textContent = `${state.dailyLogPage} / ${totalPages}`;
+    if (dailyPrevBtn) dailyPrevBtn.disabled = state.dailyLogPage <= 1;
+    if (dailyNextBtn) dailyNextBtn.disabled = state.dailyLogPage >= totalPages;
+
+    if (totalItems === 0) {
+      dailyLogGrid.innerHTML = `<div class="no-sessions">No study days recorded yet</div>`;
+      return;
+    }
+
+    const startIdx = (state.dailyLogPage - 1) * state.dailyLogPageSize;
+    const pageEntries = entries.slice(startIdx, startIdx + state.dailyLogPageSize);
+
+    pageEntries.forEach(([key, secs]) => {
+      const itemEl = document.createElement('div');
+      itemEl.className = 'daily-log-item';
+
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      let timeStr;
+      if (h > 0) {
+        timeStr = `${h}h ${String(m).padStart(2, '0')}m`;
+      } else {
+        timeStr = `${m}m`;
+      }
+
+      // Check if this is today's study day
+      const todayKey = getDayKey(new Date());
+      const isToday = key === todayKey;
+
+      itemEl.innerHTML = `
+        <span class="daily-log-date">${formatDayLabel(key)}${isToday ? '<span class="daily-today-badge">today</span>' : ''}</span>
+        <span class="daily-log-time">${timeStr}</span>
+      `;
+      dailyLogGrid.appendChild(itemEl);
     });
   }
 
@@ -915,6 +1030,33 @@
       }
     });
 
+    // Summary inner tab switching
+    if (summaryTabSessions) {
+      summaryTabSessions.addEventListener('click', () => {
+        state.summaryTab = 'sessions';
+        renderSummary();
+      });
+    }
+    if (summaryTabDaily) {
+      summaryTabDaily.addEventListener('click', () => {
+        state.summaryTab = 'daily';
+        renderSummary();
+      });
+    }
+
+    // Daily Log pagination
+    if (dailyPrevBtn) {
+      dailyPrevBtn.addEventListener('click', () => {
+        if (state.dailyLogPage > 1) { state.dailyLogPage--; renderSummary(); }
+      });
+    }
+    if (dailyNextBtn) {
+      dailyNextBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(Object.keys(state.dailyLog).length / state.dailyLogPageSize);
+        if (state.dailyLogPage < totalPages) { state.dailyLogPage++; renderSummary(); }
+      });
+    }
+
     // Reset Statistics Button
     const resetStatsBtn = document.getElementById('resetStatsBtn');
     if (resetStatsBtn) {
@@ -923,8 +1065,11 @@
         if (confirm('Are you sure you want to reset all session statistics?')) {
           state.sessionsHistory = [];
           state.currentPage = 1;
+          state.dailyLog = {};
+          state.dailyLogPage = 1;
           try {
             localStorage.removeItem('pomodoro_sessions');
+            localStorage.removeItem('pomodoro_daily_log');
           } catch (err) { }
           renderSummary();
         }
