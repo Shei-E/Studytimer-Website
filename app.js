@@ -153,8 +153,16 @@
     }
   }
 
+  // Tone Frequencies (Hz)
+  const NOTES = {
+    C5: 523.25,
+    E5: 659.25,
+    G5: 783.99,
+    C6: 1046.50 // One octave higher than C5
+  };
+
   // --- Web Audio Chime Generator ---
-  function playBellChime() {
+  function playBellChime(freq1 = NOTES.C5, freq2 = NOTES.E5) {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
@@ -164,7 +172,7 @@
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();
       osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+      osc1.frequency.setValueAtTime(freq1, ctx.currentTime);
       gain1.gain.setValueAtTime(0.3, ctx.currentTime);
       gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
       osc1.connect(gain1);
@@ -176,7 +184,7 @@
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(659.25, ctx.currentTime + 0.15); // E5
+      osc2.frequency.setValueAtTime(freq2, ctx.currentTime + 0.15);
       gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
       gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
       osc2.connect(gain2);
@@ -334,9 +342,9 @@
   }
 
   function onTimerComplete() {
-    playBellChime();
-
     if (state.mode === 'work') {
+      playBellChime(NOTES.E5, NOTES.G5); // Work ends: E -> G
+
       if (state.overtimeEnabled) {
         // Transition to Overtime Mode!
         state.timerState = 'overtime';
@@ -350,12 +358,14 @@
       }
     } else {
       // Break Timer Finished -> Transition back to Work Mode
+      playBellChime(NOTES.C5, NOTES.E5); // Break ends: C -> E
       transitionToWork();
     }
   }
 
   function finishOvertimeSession() {
     if (state.timerState !== 'overtime') return;
+    playBellChime(NOTES.G5, NOTES.C6); // OT ends: G -> C (C6 is 1 octave higher than C5)
     clearInterval(state.timerInterval);
     logCompletedSession();
     transitionToBreak();
