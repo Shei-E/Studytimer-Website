@@ -119,6 +119,7 @@
     } catch (e) {
       console.warn('Could not load daily log from localStorage:', e);
     }
+    rebuildDailyLog();
   }
 
   function saveHistory() {
@@ -132,6 +133,20 @@
     } catch (e) {
       console.warn('Could not save daily log to localStorage:', e);
     }
+  }
+
+  function rebuildDailyLog() {
+    const log = {};
+    state.sessionsHistory.forEach(s => {
+      const dateObj = s.id ? new Date(s.id) : new Date();
+      const dayKey = getDayKey(dateObj);
+      const secs = s.cancelled ? (s.workSec || 0) : (s.totalSec !== undefined ? s.totalSec : ((s.workSec || 0) + (s.otSec || 0)));
+      log[dayKey] = (log[dayKey] || 0) + secs;
+    });
+    state.dailyLog = log;
+    try {
+      localStorage.setItem('pomodoro_daily_log', JSON.stringify(state.dailyLog));
+    } catch (e) { }
   }
 
   function loadStoredTasks() {
@@ -304,6 +319,7 @@
       state.dailyLog[dayKey] = (state.dailyLog[dayKey] || 0) + workSec;
 
       saveHistory();
+      rebuildDailyLog();
     }
 
     state.timerState = 'stopped';
@@ -386,13 +402,10 @@
       totalSec: totalSec
     });
 
-    // Track full session (work + overtime) in daily log
-    const dayKey = getDayKey(now);
-    state.dailyLog[dayKey] = (state.dailyLog[dayKey] || 0) + totalSec;
-
     state.overtimeSeconds = 0;
     state.sessionStartTimestamp = null;
     saveHistory();
+    rebuildDailyLog();
   }
 
   // autoStart = true  → break timer starts immediately (used when OT mode is on)
@@ -835,8 +848,11 @@
     if (!dailyLogGrid) return;
     dailyLogGrid.innerHTML = '';
 
-    // Sort entries newest first (by day key, descending)
+    const currentTodayKey = getDayKey(new Date());
+
+    // Include only study days that have ended (strictly prior to today's active study day key)
     const entries = Object.entries(state.dailyLog)
+      .filter(([key]) => key < currentTodayKey)
       .sort((a, b) => b[0].localeCompare(a[0]));
 
     const totalItems = entries.length;
@@ -848,7 +864,7 @@
     if (dailyNextBtn) dailyNextBtn.disabled = state.dailyLogPage >= totalPages;
 
     if (totalItems === 0) {
-      dailyLogGrid.innerHTML = `<div class="no-sessions">No study days recorded yet</div>`;
+      dailyLogGrid.innerHTML = `<div class="no-sessions">No completed study days recorded yet</div>`;
       return;
     }
 
@@ -868,12 +884,8 @@
         timeStr = `${m}m`;
       }
 
-      // Check if this is today's study day
-      const todayKey = getDayKey(new Date());
-      const isToday = key === todayKey;
-
       itemEl.innerHTML = `
-        <span class="daily-log-date">${formatDayLabel(key)}${isToday ? '<span class="daily-today-badge">today</span>' : ''}</span>
+        <span class="daily-log-date">${formatDayLabel(key)}</span>
         <span class="daily-log-time">${timeStr}</span>
       `;
       dailyLogGrid.appendChild(itemEl);
@@ -883,15 +895,15 @@
   // --- Session Inline Editor ---
   function editSession(sessionIndex, itemEl, session) {
     const otSec = session.otSec || 0;
-    const normalSec = session.workSec !== undefined ? session.workSec : Math.max(0, session.totalSec - otSec);
-    const durMin = Math.round(normalSec / 60);
+    const totalSec = session.totalSec !== undefined ? session.totalSec : ((session.workSec || 0) + otSec);
+    const totalDurMin = Math.round(totalSec / 60);
     itemEl.classList.add('editing');
     itemEl.innerHTML = `
       <div class="session-edit-row">
         <input type="text" class="session-edit-input" data-field="start" value="${session.startTime}" placeholder="HH:MM" maxlength="5">
         <span class="session-edit-sep">~</span>
         <input type="text" class="session-edit-input" data-field="end" value="${session.endTime}" placeholder="HH:MM" maxlength="5">
-        <input type="number" class="session-edit-input session-edit-dur" data-field="dur" value="${durMin}" min="1" max="999" title="Duration in minutes">
+        <input type="number" class="session-edit-input session-edit-dur" data-field="dur" value="${totalDurMin}" min="1" max="999" title="Total duration in minutes">
         <span class="session-edit-unit">m</span>
         <button type="button" class="session-delete-btn" title="Remove session" aria-label="Remove session">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -928,18 +940,19 @@
       const newStart = inputs[0].value.trim() || session.startTime;
       const newEnd = inputs[1].value.trim() || session.endTime;
       const newDurMin = parseInt(inputs[2].value, 10);
-      const newNormalSec = (!isNaN(newDurMin) && newDurMin > 0) ? newDurMin * 60 : normalSec;
-      const newTotalSec = newNormalSec + otSec;
+      const newTotalSec = (!isNaN(newDurMin) && newDurMin > 0) ? newDurMin * 60 : totalSec;
+      const newOtSec = Math.min(otSec, newTotalSec);
+      const newWorkSec = newTotalSec - newOtSec;
 
       state.sessionsHistory[sessionIndex] = {
         ...session,
         startTime: newStart,
         endTime: newEnd,
         totalSec: newTotalSec,
-        workSec: newNormalSec,
-        otSec: otSec
+        workSec: newWorkSec,
+        otSec: newOtSec
       };
-      saveHistory();
+      rebuildDailyLog();
       renderSummary();
     }
 
@@ -961,7 +974,7 @@
 
   function removeSession(sessionIndex) {
     state.sessionsHistory.splice(sessionIndex, 1);
-    saveHistory();
+    rebuildDailyLog();
     renderSummary();
   }
 
@@ -1062,7 +1075,9 @@
     }
     if (dailyNextBtn) {
       dailyNextBtn.addEventListener('click', () => {
-        const totalPages = Math.ceil(Object.keys(state.dailyLog).length / state.dailyLogPageSize);
+        const currentTodayKey = getDayKey(new Date());
+        const endedDaysCount = Object.keys(state.dailyLog).filter(k => k < currentTodayKey).length;
+        const totalPages = Math.max(1, Math.ceil(endedDaysCount / state.dailyLogPageSize));
         if (state.dailyLogPage < totalPages) { state.dailyLogPage++; renderSummary(); }
       });
     }
