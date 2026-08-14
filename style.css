@@ -581,7 +581,7 @@ body {
   background-color: var(--theme-accent);
   color: var(--theme-summary-text);
   border-radius: 28px;
-  padding: 28px 32px;
+  padding: 28px 32px 20px 32px;
   box-shadow: 0 16px 45px rgba(0, 0, 0, 0.28);
   z-index: 50;
   display: flex;
@@ -791,8 +791,7 @@ body {
   font-size: 0.95rem;
   font-weight: 600;
   color: rgba(0, 0, 0, 0.4);
-  margin: auto 0 0;
-  transform: translateY(-35px);
+  margin: auto 0;
 }
 
 .sessions-tip {
@@ -841,12 +840,20 @@ body {
   height: 100%;
 }
 
+#sessionsPanel,
+#dailyPanel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .summary-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
-  margin-bottom: -35px;
+  margin-bottom: 0;
   padding-top: 12px;
   border-top: 1px dashed rgba(0, 0, 0, 0.15);
 }

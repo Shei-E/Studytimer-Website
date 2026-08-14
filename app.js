@@ -814,12 +814,11 @@
   // --- Summary & Analytics Popover Renderer ---
   function renderSummary() {
     checkDayRollover();
+    rebuildDailyLog();
 
-    // Total Work Time Calculation (all-time, summing all recorded daily log entries)
-    let totalWorkSec = 0;
-    Object.values(state.dailyLog).forEach(secs => {
-      totalWorkSec += secs;
-    });
+    // Total Work Time Calculation for the current day
+    const currentTodayKey = getDayKey(new Date());
+    const totalWorkSec = state.dailyLog[currentTodayKey] || 0;
 
     const hrs = Math.floor(totalWorkSec / 3600);
     const mins = Math.floor((totalWorkSec % 3600) / 60);
