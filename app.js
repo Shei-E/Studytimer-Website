@@ -64,6 +64,7 @@
   function init() {
     loadStoredPreferences();
     loadStoredHistory();
+    checkDayRollover();
     loadStoredTasks();
     attachEventListeners();
     updateUI();
@@ -135,14 +136,52 @@
     }
   }
 
-  function rebuildDailyLog() {
-    const log = {};
+  function checkDayRollover() {
+    const currentTodayKey = getDayKey(new Date());
+
     state.sessionsHistory.forEach(s => {
       const dateObj = s.id ? new Date(s.id) : new Date();
       const dayKey = getDayKey(dateObj);
       const secs = s.cancelled ? (s.workSec || 0) : (s.totalSec !== undefined ? s.totalSec : ((s.workSec || 0) + (s.otSec || 0)));
-      log[dayKey] = (log[dayKey] || 0) + secs;
+      if (dayKey < currentTodayKey) {
+        state.dailyLog[dayKey] = (state.dailyLog[dayKey] || 0) + secs;
+      }
     });
+
+    const todaySessions = state.sessionsHistory.filter(s => {
+      const dateObj = s.id ? new Date(s.id) : new Date();
+      return getDayKey(dateObj) === currentTodayKey;
+    });
+
+    if (todaySessions.length !== state.sessionsHistory.length) {
+      state.sessionsHistory = todaySessions;
+      state.currentPage = Math.max(1, Math.ceil(state.sessionsHistory.length / state.pageSize));
+      saveHistory();
+    }
+  }
+
+  function rebuildDailyLog() {
+    const log = { ...state.dailyLog };
+    const currentTodayKey = getDayKey(new Date());
+
+    let todaySecs = 0;
+    state.sessionsHistory.forEach(s => {
+      const dateObj = s.id ? new Date(s.id) : new Date();
+      const dayKey = getDayKey(dateObj);
+      const secs = s.cancelled ? (s.workSec || 0) : (s.totalSec !== undefined ? s.totalSec : ((s.workSec || 0) + (s.otSec || 0)));
+      if (dayKey === currentTodayKey) {
+        todaySecs += secs;
+      } else {
+        log[dayKey] = (log[dayKey] || 0) + secs;
+      }
+    });
+
+    if (todaySecs > 0) {
+      log[currentTodayKey] = todaySecs;
+    } else {
+      delete log[currentTodayKey];
+    }
+
     state.dailyLog = log;
     try {
       localStorage.setItem('pomodoro_daily_log', JSON.stringify(state.dailyLog));
@@ -341,6 +380,7 @@
   }
 
   function handleTick() {
+    checkDayRollover();
     if (state.timerState === 'running') {
       state.remainingSeconds--;
 
@@ -773,10 +813,12 @@
 
   // --- Summary & Analytics Popover Renderer ---
   function renderSummary() {
-    // Total Work Time Calculation (all-time)
+    checkDayRollover();
+
+    // Total Work Time Calculation (all-time, summing all recorded daily log entries)
     let totalWorkSec = 0;
-    state.sessionsHistory.forEach(s => {
-      totalWorkSec += (s.totalSec || s.workSec || 0);
+    Object.values(state.dailyLog).forEach(secs => {
+      totalWorkSec += secs;
     });
 
     const hrs = Math.floor(totalWorkSec / 3600);
@@ -799,10 +841,12 @@
   }
 
   function renderSessionsPanel() {
-    // Pagination Calculation
+    // Pagination Calculation: default to the latest page
     const totalItems = state.sessionsHistory.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / state.pageSize));
-    if (state.currentPage > totalPages) state.currentPage = totalPages;
+    if (state.currentPage === null || state.currentPage === undefined || state.currentPage > totalPages) {
+      state.currentPage = totalPages;
+    }
 
     pageIndicator.textContent = `${state.currentPage} / ${totalPages}`;
     prevPageBtn.disabled = state.currentPage <= 1;
@@ -828,14 +872,13 @@
       const itemEl = document.createElement('div');
       itemEl.className = 'session-item';
 
-      const normalSec = session.workSec !== undefined ? session.workSec : Math.max(0, session.totalSec - (session.otSec || 0));
-      const durMin = Math.round(normalSec / 60);
-      const otText = session.otSec > 0 ? ` (+${Math.round(session.otSec / 60)}m OT)` : '';
+      const totalSec = session.totalSec !== undefined ? session.totalSec : ((session.workSec || 0) + (session.otSec || 0));
+      const totalDurMin = Math.round(totalSec / 60);
       const cancelTag = session.cancelled ? ' (cancelled)' : '';
 
       itemEl.innerHTML = `
         <span class="session-time">${session.startTime} ~ ${session.endTime}</span>
-        <span class="session-dur">${durMin}m${otText}${cancelTag}</span>
+        <span class="session-dur">${totalDurMin}m${cancelTag}</span>
       `;
 
       itemEl.title = 'Double-click to edit';
@@ -1041,6 +1084,7 @@
       const isVisible = summaryPopover.style.display === 'block';
       summaryPopover.style.display = isVisible ? 'none' : 'block';
       if (!isVisible) {
+        state.currentPage = Math.max(1, Math.ceil(state.sessionsHistory.length / state.pageSize));
         renderSummary();
       }
     });
@@ -1079,6 +1123,25 @@
         const endedDaysCount = Object.keys(state.dailyLog).filter(k => k < currentTodayKey).length;
         const totalPages = Math.max(1, Math.ceil(endedDaysCount / state.dailyLogPageSize));
         if (state.dailyLogPage < totalPages) { state.dailyLogPage++; renderSummary(); }
+      });
+    }
+
+    // Clear Today's Sessions Button (on Sessions tab)
+    const clearTodayBtn = document.getElementById('clearTodayBtn');
+    if (clearTodayBtn) {
+      clearTodayBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm("Are you sure you want to clear today's sessions?")) {
+          const todayKey = getDayKey(new Date());
+          state.sessionsHistory = state.sessionsHistory.filter(s => {
+            const dateObj = s.id ? new Date(s.id) : new Date();
+            return getDayKey(dateObj) !== todayKey;
+          });
+          state.currentPage = 1;
+          saveHistory();
+          rebuildDailyLog();
+          renderSummary();
+        }
       });
     }
 

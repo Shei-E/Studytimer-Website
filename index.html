@@ -118,9 +118,9 @@
             </div>
             <div class="sessions-tip" id="sessionsTip" style="display: none;">Tip: double click to edit sessions</div>
 
-            <!-- Summary Footer: Reset Stats Button on left, Pagination Controls on right -->
+            <!-- Summary Footer: Clear Sessions Button on left, Pagination Controls on right -->
             <div class="summary-footer">
-              <button type="button" class="reset-stats-btn" id="resetStatsBtn" title="Reset all statistics">Reset Stats</button>
+              <button type="button" class="reset-stats-btn" id="clearTodayBtn" title="Clear today's logged sessions">Clear Sessions</button>
               <div class="pagination-controls">
                 <button type="button" class="page-btn" id="prevPageBtn" disabled aria-label="Previous Page">
                   <svg viewBox="0 0 24 24" fill="currentColor">
@@ -146,7 +146,7 @@
 
             <!-- Daily Log Footer -->
             <div class="summary-footer">
-              <div></div><!-- spacer -->
+              <button type="button" class="reset-stats-btn" id="resetStatsBtn" title="Reset all statistics">Reset Stats</button>
               <div class="pagination-controls">
                 <button type="button" class="page-btn" id="dailyPrevBtn" disabled aria-label="Previous Page">
                   <svg viewBox="0 0 24 24" fill="currentColor">
