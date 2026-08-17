@@ -923,19 +923,22 @@
             isHoriz = Math.abs(dx) > Math.abs(dy);
             dirLocked = true;
           }
-          return;
         }
 
         if (!isHoriz) return;
 
-        // Slide left only (negative translation), capped at max 30px
+        // Prevent vertical scrolling or popover drag while swiping horizontally
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Slide left only (negative translation), capped at max 60px
         if (dx <= 0) {
-          const clamped = Math.max(-30, dx);
+          const clamped = Math.max(-60, dx);
           itemEl.style.transform = `translateX(${clamped}px)`;
         } else {
           itemEl.style.transform = 'translateX(0)';
         }
-      }, { passive: true });
+      }, { passive: false });
 
       itemEl.addEventListener('touchend', (e) => {
         if (!isDragging) return;
@@ -955,8 +958,8 @@
         itemEl.style.transition = 'transform 0.18s ease-out';
         itemEl.style.transform = 'translateX(0)';
 
-        // If swiped left (at least 15px), activate editing after the slide-back animation finishes
-        if (dx <= -15) {
+        // If swiped left (at least 20px), activate editing after the slide-back animation finishes
+        if (dx <= -20) {
           setTimeout(() => {
             if (itemEl.isConnected && !itemEl.classList.contains('editing')) {
               itemEl.style.transform = '';
