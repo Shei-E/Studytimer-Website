@@ -45,6 +45,7 @@
   const taskList = document.getElementById('taskList');
   const analyticsBtn = document.getElementById('analyticsBtn');
   const summaryPopover = document.getElementById('summaryPopover');
+  const summaryCloseBtn = document.getElementById('summaryCloseBtn');
   const statTotalTime = document.getElementById('statTotalTime');
   const statSessionCount = document.getElementById('statSessionCount');
   const sessionsGrid = document.getElementById('sessionsGrid');
@@ -781,21 +782,31 @@
       if (state.mode === 'work' && (!state.timerHasBeenSet || !state.workDuration)) {
         timerReadout.textContent = 'SET TIMER';
         timerReadout.classList.add('is-text');
+        timerReadout.classList.remove('is-ot');
+        cancelTimerBtn.style.display = 'none';
       } else if (state.mode === 'break') {
         timerReadout.textContent = formatMMSS(state.remainingSeconds || state.breakDuration);
         timerReadout.classList.remove('is-text');
+        timerReadout.classList.remove('is-ot');
+        cancelTimerBtn.style.display = 'block';
       } else {
         timerReadout.textContent = formatMMSS(state.remainingSeconds);
         timerReadout.classList.remove('is-text');
+        timerReadout.classList.remove('is-ot');
+        cancelTimerBtn.style.display = 'block';
       }
       otBadge.style.display = 'none';
     } else if (state.timerState === 'overtime') {
-      timerReadout.textContent = `+${formatMMSS(state.overtimeSeconds)} OT`;
+      timerReadout.innerHTML = `+${formatMMSS(state.overtimeSeconds)}<br>OT`;
       timerReadout.classList.remove('is-text');
+      timerReadout.classList.add('is-ot');
+      cancelTimerBtn.style.display = 'block';
       otBadge.style.display = 'none';
     } else {
       timerReadout.textContent = formatMMSS(state.remainingSeconds);
       timerReadout.classList.remove('is-text');
+      timerReadout.classList.remove('is-ot');
+      cancelTimerBtn.style.display = 'block';
       otBadge.style.display = 'none';
     }
   }
@@ -1094,6 +1105,47 @@
         !analyticsBtn.contains(e.target)) {
         summaryPopover.style.display = 'none';
       }
+    });
+
+    // Close Summary Button
+    if (summaryCloseBtn) {
+      summaryCloseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        summaryPopover.style.display = 'none';
+      });
+    }
+
+    // Swipe down gesture to close summary popover on mobile / touch
+    let startY = 0;
+    let currentY = 0;
+    let isSwiping = false;
+
+    summaryPopover.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1 && summaryPopover.scrollTop <= 0) {
+        startY = e.touches[0].clientY;
+        isSwiping = true;
+      }
+    }, { passive: true });
+
+    summaryPopover.addEventListener('touchmove', (e) => {
+      if (!isSwiping) return;
+      currentY = e.touches[0].clientY;
+      const diffY = currentY - startY;
+      if (diffY > 0 && summaryPopover.scrollTop <= 0) {
+        summaryPopover.style.transform = `translateY(${diffY}px)`;
+      }
+    }, { passive: true });
+
+    summaryPopover.addEventListener('touchend', () => {
+      if (!isSwiping) return;
+      const diffY = currentY - startY;
+      if (diffY > 60 && summaryPopover.scrollTop <= 0) {
+        summaryPopover.style.display = 'none';
+      }
+      summaryPopover.style.transform = '';
+      isSwiping = false;
+      startY = 0;
+      currentY = 0;
     });
 
     // Summary inner tab switching
