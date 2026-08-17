@@ -408,6 +408,27 @@ body {
   transition: border-color 0.3s ease;
 }
 
+.task-submit-btn {
+  background: transparent;
+  border: none;
+  color: rgba(239, 247, 207, 0.55);
+  font-family: inherit;
+  font-size: 1.35rem;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: 6px;
+  line-height: 1;
+  outline: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, color 0.2s ease;
+  display: none;
+}
+
+.task-submit-btn:hover {
+  color: var(--theme-accent);
+  transform: scale(1.2);
+}
+
 .task-input::placeholder {
   color: rgba(239, 247, 207, 0.6);
   font-weight: 400;
@@ -1134,7 +1155,7 @@ body {
   }
 
   .task-delete-btn {
-    font-size: calc(1.1rem + 3px);
+    font-size: calc(1.1rem + 6px);
     font-weight: 900;
   }
 

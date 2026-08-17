@@ -42,6 +42,7 @@
   const iconPause = actionBtn.querySelector('.icon-pause');
   const iconCheck = actionBtn.querySelector('.icon-check');
   const taskInput = document.getElementById('taskInput');
+  const taskSubmitBtn = document.getElementById('taskSubmitBtn');
   const taskList = document.getElementById('taskList');
   const analyticsBtn = document.getElementById('analyticsBtn');
   const summaryPopover = document.getElementById('summaryPopover');
@@ -1079,14 +1080,33 @@
       }
     });
 
-    // Task Input (Press Enter to Add Task)
+    function updateTaskSubmitBtnVisibility() {
+      if (taskSubmitBtn) {
+        taskSubmitBtn.style.display = taskInput.value.trim() !== '' ? 'block' : 'none';
+      }
+    }
+
+    // Task Input (Press Enter or Click Arrow to Add Task)
+    taskInput.addEventListener('input', updateTaskSubmitBtnVisibility);
+
     taskInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
         addTask(taskInput.value);
         taskInput.value = '';
+        updateTaskSubmitBtnVisibility();
       }
     });
+
+    if (taskSubmitBtn) {
+      taskSubmitBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        addTask(taskInput.value);
+        taskInput.value = '';
+        updateTaskSubmitBtnVisibility();
+        taskInput.focus();
+      });
+    }
 
     // Analytics Button & Summary Popover
     analyticsBtn.addEventListener('click', (e) => {
