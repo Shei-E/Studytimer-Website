@@ -794,6 +794,11 @@ body {
   align-items: center;
   font-size: 0.95rem;
   font-weight: 700;
+  background: transparent;
+  padding: 4px 0;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
 }
 
 .session-time {
@@ -803,54 +808,6 @@ body {
 .session-dur {
   font-size: 0.85rem;
   opacity: 0.85;
-}
-
-/* Swipe-reveal wrapper for session items */
-.session-swipe-wrapper {
-  position: relative;
-  overflow: hidden;
-  border-radius: 4px;
-}
-
-.session-swipe-wrapper.editing {
-  overflow: visible;
-}
-
-.session-swipe-wrapper .session-item {
-  position: relative;
-  z-index: 1;
-  background: var(--theme-accent);
-  transform: translateX(0);
-  will-change: transform;
-  touch-action: pan-y;
-}
-
-.session-edit-reveal {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 60px;
-  background: var(--theme-body-bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 0 4px 4px 0;
-  z-index: 0;
-  transition: background-color 0.6s ease;
-}
-
-.session-edit-reveal svg {
-  width: 20px;
-  height: 20px;
-  stroke: var(--theme-summary-text);
-  fill: none;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: stroke 0.6s ease;
-  pointer-events: none;
 }
 
 /* Session Inline Editor */
@@ -1197,8 +1154,18 @@ body {
     font-size: 1rem;
   }
 
+  /* Prevent auto zoom on mobile inputs */
+  input,
+  textarea,
+  select,
+  .task-input,
+  .task-edit-input,
+  .session-edit-input {
+    font-size: 16px !important;
+  }
+
   .task-input {
-    font-size: 0.95rem;
+    font-size: 16px !important;
     border-bottom: 3px solid var(--theme-accent);
     padding-right: 30px;
   }
@@ -1217,7 +1184,7 @@ body {
     font-size: calc(1.1rem + 6px);
     font-weight: 900;
     position: relative;
-    top: -5px;
+    top: -3px;
   }
 
   /* Summary popover — fullscreen on mobile */

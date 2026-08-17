@@ -878,138 +878,50 @@
     const startIndex = (state.currentPage - 1) * state.pageSize;
     const pageItems = state.sessionsHistory.slice(startIndex, startIndex + state.pageSize);
 
-    // Helper: close all open swipes except one
-    function closeAllSwipes(exceptWrapper) {
-      sessionsGrid.querySelectorAll('.session-swipe-wrapper').forEach(w => {
-        if (w === exceptWrapper) return;
-        const c = w.querySelector('.session-item');
-        if (c) {
-          c.style.transition = 'transform 0.2s ease-out';
-          c.style.transform = 'translateX(0)';
-          w._revealed = false;
-        }
-      });
-    }
-
     pageItems.forEach((session, pageIdx) => {
       const absoluteIndex = startIndex + pageIdx;
       const totalSec = session.totalSec !== undefined ? session.totalSec : ((session.workSec || 0) + (session.otSec || 0));
       const totalDurMin = Math.round(totalSec / 60);
       const cancelTag = session.cancelled ? ' (cancelled)' : '';
 
-      // Wrapper (clips overflow so reveal stays hidden until swiped)
-      const wrapperEl = document.createElement('div');
-      wrapperEl.className = 'session-swipe-wrapper';
-      wrapperEl._revealed = false;
-
-      // Content row
-      const contentEl = document.createElement('div');
-      contentEl.className = 'session-item';
-      contentEl.innerHTML = `
+      const itemEl = document.createElement('div');
+      itemEl.className = 'session-item';
+      itemEl.innerHTML = `
         <span class="session-time">${session.startTime} ~ ${session.endTime}</span>
         <span class="session-dur">${totalDurMin}m${cancelTag}</span>
       `;
 
-      // Pencil reveal panel (sits behind, shown when swiped left)
-      const revealEl = document.createElement('div');
-      revealEl.className = 'session-edit-reveal';
-      revealEl.innerHTML = `
-        <svg viewBox="0 0 24 24">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-      `;
+      itemEl.title = 'Swipe left or double-click to edit';
+      itemEl.addEventListener('dblclick', () => editSession(absoluteIndex, itemEl, session));
 
-      wrapperEl.appendChild(contentEl);
-      wrapperEl.appendChild(revealEl);
+      // Swipe left on touch to immediately activate editing
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchMoved = false;
 
-      const REVEAL_W = 60;
-
-      function snapOpen() {
-        contentEl.style.transition = 'transform 0.22s ease-out';
-        contentEl.style.transform = `translateX(-${REVEAL_W}px)`;
-        wrapperEl._revealed = true;
-      }
-      function snapClose() {
-        contentEl.style.transition = 'transform 0.22s ease-out';
-        contentEl.style.transform = 'translateX(0)';
-        wrapperEl._revealed = false;
-      }
-
-      // Desktop: double-click to edit
-      contentEl.addEventListener('dblclick', () => {
-        closeAllSwipes(null);
-        editSession(absoluteIndex, wrapperEl, session);
-      });
-
-      // Tap on content when revealed → close
-      contentEl.addEventListener('click', () => {
-        if (wrapperEl._revealed) { snapClose(); }
-      });
-
-      // Pencil tapped → open editor
-      revealEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        editSession(absoluteIndex, wrapperEl, session);
-      });
-
-      // Touch swipe left drag
-      let tStartX = 0, tStartY = 0, tLastX = 0;
-      let dragging = false, dirLocked = false, isHoriz = false;
-
-      contentEl.addEventListener('touchstart', (e) => {
-        if (e.touches.length !== 1) return;
-        tStartX = tLastX = e.touches[0].clientX;
-        tStartY = e.touches[0].clientY;
-        dragging = true;
-        dirLocked = false;
-        isHoriz = false;
-        contentEl.style.transition = 'none';
-      }, { passive: true });
-
-      contentEl.addEventListener('touchmove', (e) => {
-        if (!dragging || e.touches.length !== 1) return;
-        tLastX = e.touches[0].clientX;
-        const dx = tLastX - tStartX;
-        const dy = e.touches[0].clientY - tStartY;
-
-        if (!dirLocked) {
-          if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-            isHoriz = Math.abs(dx) > Math.abs(dy);
-            dirLocked = true;
-          }
-          return;
+      itemEl.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          touchMoved = false;
         }
-        if (!isHoriz) return;
-
-        const baseX = wrapperEl._revealed ? -REVEAL_W : 0;
-        const raw = baseX + dx;
-        const clamped = Math.min(0, Math.max(-REVEAL_W, raw));
-        contentEl.style.transform = `translateX(${clamped}px)`;
-
-        // Close other items while dragging this one
-        if (dx < -5) closeAllSwipes(wrapperEl);
       }, { passive: true });
 
-      contentEl.addEventListener('touchend', () => {
-        if (!dragging) return;
-        dragging = false;
-        if (!isHoriz) return;
+      itemEl.addEventListener('touchmove', (e) => {
+        touchMoved = true;
+      }, { passive: true });
 
-        const dx = tLastX - tStartX;
-        const baseX = wrapperEl._revealed ? -REVEAL_W : 0;
-        const finalX = baseX + dx;
+      itemEl.addEventListener('touchend', (e) => {
+        if (!touchMoved) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        // Swipe left: horizontal displacement < -35px and dominates vertical
+        if (dx < -35 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          editSession(absoluteIndex, itemEl, session);
+        }
+      }, { passive: true });
 
-        if (finalX < -REVEAL_W / 2) { snapOpen(); }
-        else { snapClose(); }
-      });
-
-      contentEl.addEventListener('touchcancel', () => {
-        dragging = false;
-        snapClose();
-      });
-
-      sessionsGrid.appendChild(wrapperEl);
+      sessionsGrid.appendChild(itemEl);
     });
   }
 
