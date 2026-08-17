@@ -154,6 +154,20 @@ body {
   letter-spacing: 1px;
 }
 
+.timer-readout.is-ot {
+  font-size: 3rem;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.timer-readout .ot-text {
+  font-size: 0.6em;
+  font-weight: 800;
+  margin-left: 4px;
+  vertical-align: baseline;
+  letter-spacing: 0.5px;
+}
+
 /* Inline Time Input for SET TIMER */
 .inline-time-input {
   background: transparent;
@@ -984,6 +998,10 @@ body {
     font-size: 2.8rem;
   }
 
+  .timer-readout.is-ot {
+    font-size: 2.5rem;
+  }
+
   .inline-time-input {
     font-size: 3.4rem;
     width: 200px;
@@ -1049,6 +1067,11 @@ body {
 
   .timer-readout.is-text {
     font-size: 2.2rem;
+  }
+
+  .timer-readout.is-ot {
+    font-size: 2.1rem;
+    letter-spacing: 0.5px;
   }
 
   .inline-time-input {
@@ -1123,6 +1146,7 @@ body {
     transform: none;
     padding: 24px 20px 20px 20px;
     overflow-y: auto;
+    overscroll-behavior: contain;
     z-index: 100;
   }
 

@@ -797,7 +797,7 @@
       }
       otBadge.style.display = 'none';
     } else if (state.timerState === 'overtime') {
-      timerReadout.innerHTML = `+${formatMMSS(state.overtimeSeconds)}<br>OT`;
+      timerReadout.innerHTML = `+${formatMMSS(state.overtimeSeconds)} <span class="ot-text">OT</span>`;
       timerReadout.classList.remove('is-text');
       timerReadout.classList.add('is-ot');
       cancelTimerBtn.style.display = 'block';
@@ -1117,36 +1117,60 @@
 
     // Swipe down gesture to close summary popover on mobile / touch
     let startY = 0;
+    let startX = 0;
     let currentY = 0;
     let isSwiping = false;
 
     summaryPopover.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1 && summaryPopover.scrollTop <= 0) {
+      if (e.touches.length === 1) {
         startY = e.touches[0].clientY;
-        isSwiping = true;
+        startX = e.touches[0].clientX;
+        isSwiping = false;
       }
     }, { passive: true });
 
     summaryPopover.addEventListener('touchmove', (e) => {
-      if (!isSwiping) return;
+      if (e.touches.length !== 1) return;
       currentY = e.touches[0].clientY;
+      const currentX = e.touches[0].clientX;
       const diffY = currentY - startY;
-      if (diffY > 0 && summaryPopover.scrollTop <= 0) {
+      const diffX = currentX - startX;
+
+      // Only handle downward drag when scrolled to top and vertical movement dominates
+      if (diffY > 0 && Math.abs(diffY) > Math.abs(diffX) && summaryPopover.scrollTop <= 0) {
+        isSwiping = true;
+        e.preventDefault(); // Stop browser pull-to-refresh & body scrolling
+        summaryPopover.style.transition = 'none';
         summaryPopover.style.transform = `translateY(${diffY}px)`;
       }
-    }, { passive: true });
+    }, { passive: false });
 
-    summaryPopover.addEventListener('touchend', () => {
+    function handleTouchEnd() {
       if (!isSwiping) return;
       const diffY = currentY - startY;
-      if (diffY > 60 && summaryPopover.scrollTop <= 0) {
-        summaryPopover.style.display = 'none';
-      }
-      summaryPopover.style.transform = '';
       isSwiping = false;
+
+      summaryPopover.style.transition = 'transform 0.2s ease-out';
+      if (diffY > 70) {
+        summaryPopover.style.transform = 'translateY(100%)';
+        setTimeout(() => {
+          summaryPopover.style.display = 'none';
+          summaryPopover.style.transform = '';
+          summaryPopover.style.transition = '';
+        }, 200);
+      } else {
+        summaryPopover.style.transform = '';
+        setTimeout(() => {
+          summaryPopover.style.transition = '';
+        }, 200);
+      }
       startY = 0;
+      startX = 0;
       currentY = 0;
-    });
+    }
+
+    summaryPopover.addEventListener('touchend', handleTouchEnd);
+    summaryPopover.addEventListener('touchcancel', handleTouchEnd);
 
     // Summary inner tab switching
     if (summaryTabSessions) {
