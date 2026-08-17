@@ -892,8 +892,36 @@
         <span class="session-dur">${totalDurMin}m${cancelTag}</span>
       `;
 
-      itemEl.title = 'Double-click to edit';
+      itemEl.title = 'Swipe left or double-click to edit';
       itemEl.addEventListener('dblclick', () => editSession(absoluteIndex, itemEl, session));
+
+      // Swipe left to edit on mobile / touch
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchMoved = false;
+
+      itemEl.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          touchMoved = false;
+        }
+      }, { passive: true });
+
+      itemEl.addEventListener('touchmove', (e) => {
+        touchMoved = true;
+      }, { passive: true });
+
+      itemEl.addEventListener('touchend', (e) => {
+        if (!touchMoved) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        // Swipe left: horizontal movement > 40px, dominates vertical
+        if (dx < -40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          editSession(absoluteIndex, itemEl, session);
+        }
+      }, { passive: true });
+
       sessionsGrid.appendChild(itemEl);
     });
   }

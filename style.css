@@ -418,13 +418,13 @@ body {
 .task-submit-btn {
   position: absolute;
   right: 2px;
-  bottom: 3px;
+  bottom: 4px;
   background: transparent;
   border: none;
   color: rgba(239, 247, 207, 0.55);
   font-family: inherit;
-  font-size: 1.35rem;
-  font-weight: 800;
+  font-size: calc(1.35rem - 6px);
+  font-weight: 400;
   cursor: pointer;
   padding: 0 2px;
   line-height: 1;
