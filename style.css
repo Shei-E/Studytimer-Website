@@ -1168,6 +1168,8 @@ body {
   .task-delete-btn {
     font-size: calc(1.1rem + 6px);
     font-weight: 900;
+    position: relative;
+    top: -5px;
   }
 
   /* Summary popover — fullscreen on mobile */
