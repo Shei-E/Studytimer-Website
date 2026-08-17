@@ -894,32 +894,80 @@
       itemEl.title = 'Swipe left or double-click to edit';
       itemEl.addEventListener('dblclick', () => editSession(absoluteIndex, itemEl, session));
 
-      // Swipe left on touch to immediately activate editing
+      // Swipe left interaction: drags item left, then activates editing on release
       let touchStartX = 0;
       let touchStartY = 0;
-      let touchMoved = false;
+      let touchLastX = 0;
+      let isDragging = false;
+      let dirLocked = false;
+      let isHoriz = false;
 
       itemEl.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1) {
-          touchStartX = e.touches[0].clientX;
-          touchStartY = e.touches[0].clientY;
-          touchMoved = false;
-        }
+        if (e.touches.length !== 1 || itemEl.classList.contains('editing')) return;
+        touchStartX = touchLastX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isDragging = true;
+        dirLocked = false;
+        isHoriz = false;
+        itemEl.style.transition = 'none';
       }, { passive: true });
 
       itemEl.addEventListener('touchmove', (e) => {
-        touchMoved = true;
+        if (!isDragging || e.touches.length !== 1) return;
+        touchLastX = e.touches[0].clientX;
+        const dx = touchLastX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+
+        if (!dirLocked) {
+          if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            isHoriz = Math.abs(dx) > Math.abs(dy);
+            dirLocked = true;
+          }
+          return;
+        }
+
+        if (!isHoriz) return;
+
+        // Slide left only (negative translation), capped with resistance
+        if (dx <= 0) {
+          const clamped = Math.max(-120, dx);
+          itemEl.style.transform = `translateX(${clamped}px)`;
+        } else {
+          itemEl.style.transform = 'translateX(0)';
+        }
       }, { passive: true });
 
       itemEl.addEventListener('touchend', (e) => {
-        if (!touchMoved) return;
-        const dx = e.changedTouches[0].clientX - touchStartX;
-        const dy = e.changedTouches[0].clientY - touchStartY;
-        // Swipe left: horizontal displacement < -35px and dominates vertical
-        if (dx < -35 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-          editSession(absoluteIndex, itemEl, session);
+        if (!isDragging) return;
+        isDragging = false;
+
+        if (!isHoriz) {
+          itemEl.style.transition = 'transform 0.2s ease-out';
+          itemEl.style.transform = 'translateX(0)';
+          return;
         }
-      }, { passive: true });
+
+        const dx = (e.changedTouches && e.changedTouches.length > 0)
+          ? e.changedTouches[0].clientX - touchStartX
+          : touchLastX - touchStartX;
+
+        // If swiped left past 40px, activate editing upon release
+        if (dx < -40) {
+          itemEl.style.transform = '';
+          itemEl.style.transition = '';
+          editSession(absoluteIndex, itemEl, session);
+        } else {
+          // Snap back to 0
+          itemEl.style.transition = 'transform 0.2s ease-out';
+          itemEl.style.transform = 'translateX(0)';
+        }
+      });
+
+      itemEl.addEventListener('touchcancel', () => {
+        isDragging = false;
+        itemEl.style.transition = 'transform 0.2s ease-out';
+        itemEl.style.transform = 'translateX(0)';
+      });
 
       sessionsGrid.appendChild(itemEl);
     });

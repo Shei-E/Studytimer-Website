@@ -173,8 +173,10 @@ body {
   background: transparent;
   border: none;
   font-family: inherit;
-  font-size: 3.8rem;
+  font-size: 4rem;
   font-weight: 800;
+  line-height: 1;
+  letter-spacing: 2px;
   color: var(--theme-display-color);
   text-align: center;
   width: 220px;
@@ -786,6 +788,7 @@ body {
   gap: 8px;
   min-height: 140px;
   flex: 1;
+  overflow-x: hidden;
 }
 
 .session-item {
@@ -1039,7 +1042,7 @@ body {
   }
 
   .inline-time-input {
-    font-size: 3.4rem;
+    font-size: 3.6rem;
     width: 200px;
   }
 
@@ -1111,8 +1114,9 @@ body {
   }
 
   .inline-time-input {
-    font-size: 2.6rem;
-    width: 160px;
+    font-size: 2.8rem;
+    letter-spacing: 1px;
+    width: 170px;
   }
 
   /* Overtime checkbox area */
@@ -1154,10 +1158,7 @@ body {
     font-size: 1rem;
   }
 
-  /* Prevent auto zoom on mobile inputs */
-  input,
-  textarea,
-  select,
+  /* Prevent auto zoom on mobile text inputs */
   .task-input,
   .task-edit-input,
   .session-edit-input {
@@ -1165,7 +1166,6 @@ body {
   }
 
   .task-input {
-    font-size: 16px !important;
     border-bottom: 3px solid var(--theme-accent);
     padding-right: 30px;
   }
