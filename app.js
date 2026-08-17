@@ -1129,19 +1129,34 @@
       }
     }, { passive: true });
 
+    function getActiveScrollableGrid() {
+      return state.summaryTab === 'sessions' ? sessionsGrid : dailyLogGrid;
+    }
+
     summaryPopover.addEventListener('touchmove', (e) => {
       if (e.touches.length !== 1) return;
       currentY = e.touches[0].clientY;
       const currentX = e.touches[0].clientX;
       const diffY = currentY - startY;
       const diffX = currentX - startX;
+      const grid = getActiveScrollableGrid();
+      const isAtTop = summaryPopover.scrollTop <= 0 && (!grid || grid.scrollTop <= 0);
 
-      // Only handle downward drag when scrolled to top and vertical movement dominates
-      if (diffY > 0 && Math.abs(diffY) > Math.abs(diffX) && summaryPopover.scrollTop <= 0) {
-        isSwiping = true;
-        e.preventDefault(); // Stop browser pull-to-refresh & body scrolling
-        summaryPopover.style.transition = 'none';
-        summaryPopover.style.transform = `translateY(${diffY}px)`;
+      if (Math.abs(diffY) > Math.abs(diffX)) {
+        if (diffY > 0 && isAtTop) {
+          // Downward drag at top: slide summary sheet down to close
+          isSwiping = true;
+          e.preventDefault();
+          summaryPopover.style.transition = 'none';
+          summaryPopover.style.transform = `translateY(${diffY}px)`;
+        } else if (diffY < 0) {
+          // Upward swipe: summary sheet stays completely in place (does nothing to modal or background)
+          summaryPopover.style.transform = '';
+          const isAtBottom = grid ? (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 1) : true;
+          if (isAtBottom) {
+            e.preventDefault(); // Prevent background body overscroll
+          }
+        }
       }
     }, { passive: false });
 
