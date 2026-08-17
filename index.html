@@ -3,7 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Work - Pomodoro Timer</title>
+  <title>Study Timer - Free Online Pomodoro & Focus Timer with Overtime</title>
+  
+  <!-- Primary SEO Meta Tags -->
+  <meta name="description" content="Boost your productivity with Study Timer, a clean and aesthetic online Pomodoro timer featuring overtime mode, custom intervals, task manager, and daily study log.">
+  <meta name="keywords" content="study timer, pomodoro timer, online timer, productivity timer, focus timer, study clock, overtime pomodoro, aesthetic timer, work break timer">
+  <meta name="author" content="Study Timer">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="application-name" content="Study Timer">
+  <meta name="theme-color" content="#DF5346">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Study Timer">
+  <meta property="og:title" content="Study Timer - Free Online Pomodoro & Focus Timer with Overtime">
+  <meta property="og:description" content="Clean and aesthetic online Pomodoro study timer with overtime tracking, custom study/break intervals, tasks list, and daily productivity logging.">
+  <meta property="og:image" content="extracted_images/Desktop%20Work.png">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter / X Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Study Timer - Free Online Pomodoro & Focus Timer with Overtime">
+  <meta name="twitter:description" content="Aesthetic Pomodoro study timer with overtime mode, customizable intervals, task management, and daily productivity log.">
+  <meta name="twitter:image" content="extracted_images/Desktop%20Work.png">
+
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="extracted_images/Mobile%20Work.png">
+  <link rel="apple-touch-icon" href="extracted_images/Mobile%20Work.png">
+
+  <!-- Structured Data: WebApplication & FAQ Schema (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://studytimer.app/#webapp",
+        "name": "Study Timer",
+        "url": "https://studytimer.app/",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "All",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "description": "Minimalist online Pomodoro timer with overtime mode, customizable work and break intervals, task list reordering, and daily productivity log.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "featureList": [
+          "Pomodoro Work and Break Intervals",
+          "Automatic Overtime (OT) Mode",
+          "Interactive Task List with Reordering and Inline Editing",
+          "Daily Productivity Log and Session History",
+          "Adaptive Light and Dark Color Themes"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://studytimer.app/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is Study Timer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Study Timer is an aesthetic, distraction-free online Pomodoro study clock designed to help students, programmers, and professionals maintain deep focus and track productive hours."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does Overtime Mode work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "When Overtime Mode is enabled, the timer counts upwards once your study session concludes so you can continue in the flow without interruption until you are ready to log your full duration."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I customize the work and break durations?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes! Simply click or tap on the timer readout (SET TIMER) to type any custom duration in minutes."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
   <!-- Google Fonts for crisp modern typography matching the design -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,6 +103,7 @@
   <div class="app-viewport">
     <!-- Main Pomodoro Card -->
     <main class="pomodoro-card">
+      <h1 class="sr-only">Study Timer - Online Pomodoro & Focus Timer</h1>
       
       <!-- Top Mode Navigation Tabs -->
       <nav class="mode-tabs" aria-label="Timer Mode Switcher">

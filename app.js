@@ -815,11 +815,11 @@
   function updatePageTitle() {
     let modeLabel = state.mode === 'work' ? 'Work' : 'Break';
     if (state.timerState === 'overtime') {
-      document.title = `(+${formatMMSS(state.overtimeSeconds)}) OT - Pomodoro`;
+      document.title = `(+${formatMMSS(state.overtimeSeconds)}) OT - Study Pomodoro Timer`;
     } else if (state.timerState === 'stopped') {
-      document.title = `${modeLabel} - Pomodoro Timer`;
+      document.title = `Study Timer - Free Online Pomodoro & Focus Timer with Overtime`;
     } else {
-      document.title = `(${formatMMSS(state.remainingSeconds)}) ${modeLabel} - Pomodoro`;
+      document.title = `(${formatMMSS(state.remainingSeconds)}) ${modeLabel} - Study Timer`;
     }
   }
 

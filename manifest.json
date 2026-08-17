@@ -1,0 +1,16 @@
+{
+  "name": "Study Timer - Pomodoro & Focus Timer",
+  "short_name": "Study Timer",
+  "description": "Minimalist online Pomodoro timer with overtime mode, custom intervals, task manager, and daily study log.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#b23a30",
+  "theme_color": "#b23a30",
+  "icons": [
+    {
+      "src": "extracted_images/Mobile%20Work.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
