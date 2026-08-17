@@ -928,9 +928,9 @@
 
         if (!isHoriz) return;
 
-        // Slide left only (negative translation), capped with resistance
+        // Slide left only (negative translation), capped at max 30px
         if (dx <= 0) {
-          const clamped = Math.max(-120, dx);
+          const clamped = Math.max(-30, dx);
           itemEl.style.transform = `translateX(${clamped}px)`;
         } else {
           itemEl.style.transform = 'translateX(0)';
@@ -942,7 +942,7 @@
         isDragging = false;
 
         if (!isHoriz) {
-          itemEl.style.transition = 'transform 0.2s ease-out';
+          itemEl.style.transition = 'transform 0.18s ease-out';
           itemEl.style.transform = 'translateX(0)';
           return;
         }
@@ -951,21 +951,25 @@
           ? e.changedTouches[0].clientX - touchStartX
           : touchLastX - touchStartX;
 
-        // If swiped left past 40px, activate editing upon release
-        if (dx < -40) {
-          itemEl.style.transform = '';
-          itemEl.style.transition = '';
-          editSession(absoluteIndex, itemEl, session);
-        } else {
-          // Snap back to 0
-          itemEl.style.transition = 'transform 0.2s ease-out';
-          itemEl.style.transform = 'translateX(0)';
+        // Animate sliding back to original position
+        itemEl.style.transition = 'transform 0.18s ease-out';
+        itemEl.style.transform = 'translateX(0)';
+
+        // If swiped left (at least 15px), activate editing after the slide-back animation finishes
+        if (dx <= -15) {
+          setTimeout(() => {
+            if (itemEl.isConnected && !itemEl.classList.contains('editing')) {
+              itemEl.style.transform = '';
+              itemEl.style.transition = '';
+              editSession(absoluteIndex, itemEl, session);
+            }
+          }, 180);
         }
       });
 
       itemEl.addEventListener('touchcancel', () => {
         isDragging = false;
-        itemEl.style.transition = 'transform 0.2s ease-out';
+        itemEl.style.transition = 'transform 0.18s ease-out';
         itemEl.style.transform = 'translateX(0)';
       });
 
