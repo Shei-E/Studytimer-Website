@@ -394,8 +394,15 @@ body {
   white-space: nowrap;
 }
 
-.task-input {
+.task-input-container {
+  position: relative;
   flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.task-input {
+  width: 100%;
   background: transparent;
   border: none;
   border-bottom: 2px solid var(--theme-accent);
@@ -403,12 +410,15 @@ body {
   font-family: inherit;
   font-size: 1.05rem;
   font-weight: 600;
-  padding: 4px 6px;
+  padding: 4px 28px 4px 6px;
   outline: none;
   transition: border-color 0.3s ease;
 }
 
 .task-submit-btn {
+  position: absolute;
+  right: 2px;
+  bottom: 3px;
   background: transparent;
   border: none;
   color: rgba(239, 247, 207, 0.55);
@@ -416,12 +426,12 @@ body {
   font-size: 1.35rem;
   font-weight: 800;
   cursor: pointer;
-  padding: 0 4px;
-  margin-left: 6px;
+  padding: 0 2px;
   line-height: 1;
   outline: none;
   transition: opacity 0.2s ease, transform 0.2s ease, color 0.2s ease;
   display: none;
+  z-index: 2;
 }
 
 .task-submit-btn:hover {
@@ -1142,6 +1152,7 @@ body {
   .task-input {
     font-size: 0.95rem;
     border-bottom: 3px solid var(--theme-accent);
+    padding-right: 30px;
   }
 
   .task-list {
