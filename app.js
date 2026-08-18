@@ -896,20 +896,10 @@
   }
 
   function renderSessionsPanel() {
-    // Pagination Calculation: default to the latest page
-    const totalItems = state.sessionsHistory.length;
-    const totalPages = Math.max(1, Math.ceil(totalItems / state.pageSize));
-    if (state.currentPage === null || state.currentPage === undefined || state.currentPage > totalPages) {
-      state.currentPage = totalPages;
-    }
-
-    pageIndicator.textContent = `${state.currentPage} / ${totalPages}`;
-    prevPageBtn.disabled = state.currentPage <= 1;
-    nextPageBtn.disabled = state.currentPage >= totalPages;
-
     // Grid population
     sessionsGrid.innerHTML = '';
     const sessionsTip = document.getElementById('sessionsTip');
+    const totalItems = state.sessionsHistory.length;
 
     if (totalItems === 0) {
       sessionsGrid.innerHTML = `<div class="no-sessions">No completed sessions yet</div>`;
@@ -919,11 +909,7 @@
 
     if (sessionsTip) sessionsTip.style.display = 'block';
 
-    const startIndex = (state.currentPage - 1) * state.pageSize;
-    const pageItems = state.sessionsHistory.slice(startIndex, startIndex + state.pageSize);
-
-    pageItems.forEach((session, pageIdx) => {
-      const absoluteIndex = startIndex + pageIdx;
+    state.sessionsHistory.forEach((session, absoluteIndex) => {
       const totalSec = session.totalSec !== undefined ? session.totalSec : ((session.workSec || 0) + (session.otSec || 0));
       const totalDurMin = Math.round(totalSec / 60);
       const cancelTag = session.cancelled ? ' (cancelled)' : '';
@@ -1400,21 +1386,25 @@
       });
     }
 
-    // Pagination Buttons
-    prevPageBtn.addEventListener('click', () => {
-      if (state.currentPage > 1) {
-        state.currentPage--;
-        renderSummary();
-      }
-    });
+    // Pagination Buttons (if present)
+    if (prevPageBtn) {
+      prevPageBtn.addEventListener('click', () => {
+        if (state.currentPage > 1) {
+          state.currentPage--;
+          renderSummary();
+        }
+      });
+    }
 
-    nextPageBtn.addEventListener('click', () => {
-      const totalPages = Math.ceil(state.sessionsHistory.length / state.pageSize);
-      if (state.currentPage < totalPages) {
-        state.currentPage++;
-        renderSummary();
-      }
-    });
+    if (nextPageBtn) {
+      nextPageBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(state.sessionsHistory.length / state.pageSize);
+        if (state.currentPage < totalPages) {
+          state.currentPage++;
+          renderSummary();
+        }
+      });
+    }
   }
 
   // --- Run Initialization on DOM Ready ---

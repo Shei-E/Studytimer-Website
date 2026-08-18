@@ -816,6 +816,22 @@ body {
   min-height: 140px;
   flex: 1;
   overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.sessions-grid::-webkit-scrollbar {
+  width: 4px;
+}
+.sessions-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sessions-grid::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+.sessions-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.35);
 }
 
 .session-item {
@@ -911,6 +927,14 @@ body {
   margin-top: 6px;
   margin-bottom: 2px;
   letter-spacing: 0.3px;
+}
+
+.tip-desktop {
+  display: inline;
+}
+
+.tip-mobile {
+  display: none;
 }
 
 .session-delete-btn {
@@ -1253,6 +1277,14 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0;
+  }
+
+  .tip-desktop {
+    display: none;
+  }
+
+  .tip-mobile {
+    display: inline;
   }
 
   .sessions-grid {
