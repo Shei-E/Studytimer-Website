@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="workRedGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#FF6B5B"/>
+      <stop offset="50%" stop-color="#FF6353"/>
+      <stop offset="100%" stop-color="#E24B3E"/>
+    </radialGradient>
+    
+  </defs>
+  <!-- Work mode Red Play Button Circle -->
+  <circle cx="256" cy="256" r="232" fill="url(#workRedGrad)" stroke="#EFF7CF" stroke-width="22" />
+  <!-- Play Icon Triangle in #EFF7CF -->
+  <g transform="translate(268, 256) scale(8.8) translate(-12, -12)">
+    <path d="M7.5 3.824c-1.333-.77-3 .192-3 1.732v12.888c0 1.54 1.667 2.502 3 1.732l11.159-6.444c1.333-.77 1.333-2.694 0-3.464L7.5 3.824z" fill="#EFF7CF" stroke="#EFF7CF" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
+  </g>
+</svg>
