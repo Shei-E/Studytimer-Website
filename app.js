@@ -22,9 +22,7 @@
     tasks: [], // Array of { id, text, completed }
     currentPage: 1,
     pageSize: 6,
-    summaryTab: 'sessions', // 'sessions' | 'daily'
-    dailyLogPage: 1,
-    dailyLogPageSize: 6
+    summaryTab: 'sessions' // 'sessions' | 'daily'
   };
 
   // --- DOM Elements ---
@@ -50,13 +48,7 @@
   const statTotalTime = document.getElementById('statTotalTime');
   const statSessionCount = document.getElementById('statSessionCount');
   const sessionsGrid = document.getElementById('sessionsGrid');
-  const prevPageBtn = document.getElementById('prevPageBtn');
-  const nextPageBtn = document.getElementById('nextPageBtn');
-  const pageIndicator = document.getElementById('pageIndicator');
   const dailyLogGrid = document.getElementById('dailyLogGrid');
-  const dailyPrevBtn = document.getElementById('dailyPrevBtn');
-  const dailyNextBtn = document.getElementById('dailyNextBtn');
-  const dailyPageIndicator = document.getElementById('dailyPageIndicator');
   const summaryTabSessions = document.getElementById('summaryTabSessions');
   const summaryTabDaily = document.getElementById('summaryTabDaily');
   const sessionsPanel = document.getElementById('sessionsPanel');
@@ -1021,23 +1013,12 @@
       .filter(([key]) => key < currentTodayKey)
       .sort((a, b) => b[0].localeCompare(a[0]));
 
-    const totalItems = entries.length;
-    const totalPages = Math.max(1, Math.ceil(totalItems / state.dailyLogPageSize));
-    if (state.dailyLogPage > totalPages) state.dailyLogPage = totalPages;
-
-    if (dailyPageIndicator) dailyPageIndicator.textContent = `${state.dailyLogPage} / ${totalPages}`;
-    if (dailyPrevBtn) dailyPrevBtn.disabled = state.dailyLogPage <= 1;
-    if (dailyNextBtn) dailyNextBtn.disabled = state.dailyLogPage >= totalPages;
-
-    if (totalItems === 0) {
+    if (entries.length === 0) {
       dailyLogGrid.innerHTML = `<div class="no-sessions">No completed study days recorded yet</div>`;
       return;
     }
 
-    const startIdx = (state.dailyLogPage - 1) * state.dailyLogPageSize;
-    const pageEntries = entries.slice(startIdx, startIdx + state.dailyLogPageSize);
-
-    pageEntries.forEach(([key, secs]) => {
+    entries.forEach(([key, secs]) => {
       const itemEl = document.createElement('div');
       itemEl.className = 'daily-log-item';
 
@@ -1333,21 +1314,6 @@
       });
     }
 
-    // Daily Log pagination
-    if (dailyPrevBtn) {
-      dailyPrevBtn.addEventListener('click', () => {
-        if (state.dailyLogPage > 1) { state.dailyLogPage--; renderSummary(); }
-      });
-    }
-    if (dailyNextBtn) {
-      dailyNextBtn.addEventListener('click', () => {
-        const currentTodayKey = getDayKey(new Date());
-        const endedDaysCount = Object.keys(state.dailyLog).filter(k => k < currentTodayKey).length;
-        const totalPages = Math.max(1, Math.ceil(endedDaysCount / state.dailyLogPageSize));
-        if (state.dailyLogPage < totalPages) { state.dailyLogPage++; renderSummary(); }
-      });
-    }
-
     // Clear Today's Sessions Button (on Sessions tab)
     const clearTodayBtn = document.getElementById('clearTodayBtn');
     if (clearTodayBtn) {
@@ -1376,31 +1342,10 @@
           state.sessionsHistory = [];
           state.currentPage = 1;
           state.dailyLog = {};
-          state.dailyLogPage = 1;
           try {
             localStorage.removeItem('pomodoro_sessions');
             localStorage.removeItem('pomodoro_daily_log');
           } catch (err) { }
-          renderSummary();
-        }
-      });
-    }
-
-    // Pagination Buttons (if present)
-    if (prevPageBtn) {
-      prevPageBtn.addEventListener('click', () => {
-        if (state.currentPage > 1) {
-          state.currentPage--;
-          renderSummary();
-        }
-      });
-    }
-
-    if (nextPageBtn) {
-      nextPageBtn.addEventListener('click', () => {
-        const totalPages = Math.ceil(state.sessionsHistory.length / state.pageSize);
-        if (state.currentPage < totalPages) {
-          state.currentPage++;
           renderSummary();
         }
       });
