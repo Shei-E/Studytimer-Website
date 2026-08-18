@@ -77,18 +77,28 @@
     try {
       const isSet = localStorage.getItem('pomodoro_timer_set');
       const savedWork = localStorage.getItem('pomodoro_work_duration');
-      if (isSet === 'true' && savedWork) {
-        state.timerHasBeenSet = true;
-        state.workDuration = parseInt(savedWork, 10);
-        state.remainingSeconds = state.workDuration;
+      if (isSet === 'true' && savedWork !== null && savedWork !== 'null' && savedWork !== 'undefined' && savedWork !== '') {
+        const parsedWork = parseInt(savedWork, 10);
+        if (!isNaN(parsedWork) && parsedWork >= 0) {
+          state.timerHasBeenSet = true;
+          state.workDuration = parsedWork;
+          state.remainingSeconds = state.workDuration;
+        } else {
+          state.timerHasBeenSet = false;
+          state.workDuration = null;
+          state.remainingSeconds = 0;
+        }
       } else {
         state.timerHasBeenSet = false;
         state.workDuration = null;
         state.remainingSeconds = 0;
       }
       const savedBreak = localStorage.getItem('pomodoro_break_duration');
-      if (savedBreak) {
-        state.breakDuration = parseInt(savedBreak, 10);
+      if (savedBreak !== null && savedBreak !== 'null' && savedBreak !== 'undefined' && savedBreak !== '') {
+        const parsedBreak = parseInt(savedBreak, 10);
+        if (!isNaN(parsedBreak) && parsedBreak > 0) {
+          state.breakDuration = parsedBreak;
+        }
       }
     } catch (e) {
       console.warn('Could not load preferences from localStorage:', e);
@@ -97,9 +107,16 @@
 
   function savePreferences() {
     try {
-      localStorage.setItem('pomodoro_timer_set', 'true');
-      localStorage.setItem('pomodoro_work_duration', state.workDuration);
-      localStorage.setItem('pomodoro_break_duration', state.breakDuration);
+      if (state.timerHasBeenSet && state.workDuration !== null && !isNaN(state.workDuration)) {
+        localStorage.setItem('pomodoro_timer_set', 'true');
+        localStorage.setItem('pomodoro_work_duration', state.workDuration);
+      } else {
+        localStorage.removeItem('pomodoro_timer_set');
+        localStorage.removeItem('pomodoro_work_duration');
+      }
+      if (state.breakDuration !== null && !isNaN(state.breakDuration)) {
+        localStorage.setItem('pomodoro_break_duration', state.breakDuration);
+      }
     } catch (e) {
       console.warn('Could not save preferences to localStorage:', e);
     }
@@ -254,8 +271,11 @@
 
   // --- Helper Formatting Functions ---
   function formatMMSS(seconds) {
+    if (seconds === null || seconds === undefined || isNaN(seconds) || seconds < 0) {
+      seconds = 0;
+    }
     const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
+    const s = Math.floor(seconds % 60);
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   }
 
@@ -287,7 +307,7 @@
     if (state.timerState === 'running' || state.timerState === 'overtime') return;
 
     // If timer has not been set yet, prompt user to set study time first
-    if ((!state.timerHasBeenSet || state.workDuration === null) && state.mode === 'work') {
+    if (state.mode === 'work' && (!state.timerHasBeenSet || state.workDuration === null || isNaN(state.workDuration))) {
       openInlineTimeEditor();
       return;
     }
@@ -374,7 +394,7 @@
       body.className = 'theme-break';
     } else {
       state.mode = 'work';
-      state.remainingSeconds = state.workDuration || 0;
+      state.remainingSeconds = (state.workDuration !== null && !isNaN(state.workDuration)) ? state.workDuration : 0;
       body.className = 'theme-work';
     }
 
@@ -433,14 +453,16 @@
     const now = new Date();
     const endTime = formatHHMM(now);
     const startTime = state.sessionStartTimestamp || endTime;
-    const totalSec = state.workDuration + state.overtimeSeconds;
+    const workSec = (state.workDuration !== null && !isNaN(state.workDuration)) ? state.workDuration : 0;
+    const otSec = state.overtimeSeconds || 0;
+    const totalSec = workSec + otSec;
 
     state.sessionsHistory.push({
       id: Date.now(),
       startTime: startTime,
       endTime: endTime,
-      workSec: state.workDuration,
-      otSec: state.overtimeSeconds,
+      workSec: workSec,
+      otSec: otSec,
       totalSec: totalSec
     });
 
@@ -469,16 +491,32 @@
 
   function transitionToWork() {
     state.mode = 'work';
-    state.remainingSeconds = state.workDuration;
-    state.overtimeSeconds = 0;
     body.className = 'theme-work';
     clearInterval(state.timerInterval);
 
+    if (!state.timerHasBeenSet || state.workDuration === null || isNaN(state.workDuration)) {
+      state.remainingSeconds = 0;
+      state.timerState = 'stopped';
+      updateUI();
+      return;
+    }
+
+    state.remainingSeconds = state.workDuration;
+    state.overtimeSeconds = 0;
+
     if (state.overtimeEnabled) {
-      // OT on: auto-start the next work session after break ends
-      state.timerState = 'running';
-      state.sessionStartTimestamp = formatHHMM(new Date());
-      state.timerInterval = setInterval(handleTick, 1000);
+      if (state.workDuration === 0) {
+        state.timerState = 'overtime';
+        state.overtimeSeconds = 0;
+        state.sessionStartTimestamp = formatHHMM(new Date());
+        body.className = 'theme-ot';
+        state.timerInterval = setInterval(handleTick, 1000);
+      } else {
+        // OT on: auto-start the next work session after break ends
+        state.timerState = 'running';
+        state.sessionStartTimestamp = formatHHMM(new Date());
+        state.timerInterval = setInterval(handleTick, 1000);
+      }
     } else {
       // OT off: reset to stopped, user presses play to begin
       state.timerState = 'stopped';
@@ -495,7 +533,7 @@
     state.overtimeSeconds = 0;
 
     if (newMode === 'work') {
-      state.remainingSeconds = state.workDuration;
+      state.remainingSeconds = (state.workDuration !== null && !isNaN(state.workDuration)) ? state.workDuration : 0;
       body.className = 'theme-work';
     } else {
       state.remainingSeconds = state.breakDuration;
@@ -513,7 +551,7 @@
 
     if (state.mode === 'break') {
       inlineTimeInput.value = Math.max(1, Math.floor(state.breakDuration / 60));
-    } else if (state.timerHasBeenSet && state.workDuration !== null) {
+    } else if (state.timerHasBeenSet && state.workDuration !== null && !isNaN(state.workDuration)) {
       inlineTimeInput.value = Math.floor(state.workDuration / 60);
     } else {
       inlineTimeInput.value = '';
@@ -780,7 +818,7 @@
     if (inlineTimeInput.style.display === 'inline-block') return;
 
     if (state.timerState === 'stopped') {
-      if (state.mode === 'work' && (!state.timerHasBeenSet || !state.workDuration)) {
+      if (state.mode === 'work' && (!state.timerHasBeenSet || state.workDuration === null || isNaN(state.workDuration))) {
         timerReadout.textContent = 'SET TIMER';
         timerReadout.classList.add('is-text');
         timerReadout.classList.remove('is-ot');

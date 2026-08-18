@@ -599,9 +599,9 @@ body {
 
 .task-delete-btn {
   color: #EFF7CF;
-  font-size: 1.1rem;
+  font-size: calc(1.1rem - 2px);
   position: relative;
-  top: -1px;
+  top: 1px;
 }
 
 /* Analytics Button */
