@@ -206,6 +206,20 @@ body {
 .inline-time-input[type=number] {
   -moz-appearance: textfield;
 }
+.inline-time-input::placeholder {
+  color: var(--theme-display-color);
+  opacity: 0.6;
+}
+
+@keyframes promptPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+.prompt-attention {
+  animation: promptPulse 0.3s ease-in-out;
+}
 
 .ot-badge {
   font-size: 1.15rem;

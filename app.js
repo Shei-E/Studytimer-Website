@@ -308,7 +308,7 @@
 
     // If timer has not been set yet, prompt user to set study time first
     if (state.mode === 'work' && (!state.timerHasBeenSet || state.workDuration === null || isNaN(state.workDuration))) {
-      openInlineTimeEditor();
+      openInlineTimeEditor(true);
       return;
     }
 
@@ -544,21 +544,27 @@
   }
 
   // --- Inline Time Editing ---
-  function openInlineTimeEditor() {
-    if (inlineTimeInput.style.display === 'inline-block') return;
-    timerReadout.style.display = 'none';
-    inlineTimeInput.style.display = 'inline-block';
+  function openInlineTimeEditor(shake = false) {
+    if (inlineTimeInput.style.display !== 'inline-block') {
+      timerReadout.style.display = 'none';
+      inlineTimeInput.style.display = 'inline-block';
 
-    if (state.mode === 'break') {
-      inlineTimeInput.value = Math.max(1, Math.floor(state.breakDuration / 60));
-    } else if (state.timerHasBeenSet && state.workDuration !== null && !isNaN(state.workDuration)) {
-      inlineTimeInput.value = Math.floor(state.workDuration / 60);
-    } else {
-      inlineTimeInput.value = '';
+      if (state.mode === 'break') {
+        inlineTimeInput.value = Math.max(1, Math.floor(state.breakDuration / 60));
+      } else if (state.timerHasBeenSet && state.workDuration !== null && !isNaN(state.workDuration)) {
+        inlineTimeInput.value = Math.floor(state.workDuration / 60);
+      } else {
+        inlineTimeInput.value = '';
+      }
     }
     inlineTimeInput.focus();
     if (inlineTimeInput.value) {
       inlineTimeInput.select();
+    }
+    if (shake && timerDisplayBox) {
+      timerDisplayBox.classList.remove('prompt-attention');
+      void timerDisplayBox.offsetWidth; // force DOM reflow
+      timerDisplayBox.classList.add('prompt-attention');
     }
   }
 
