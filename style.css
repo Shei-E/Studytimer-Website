@@ -65,22 +65,208 @@ body {
   background-color: var(--theme-body-bg);
   color: var(--theme-accent);
   min-height: 100vh;
-  width: 100vw;
+  width: 100%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
   overflow-x: hidden;
   transition: background-color 0.6s ease, color 0.6s ease;
 }
 
-/* App Viewport Container - Positioned higher up (top space halved) */
+/* App Viewport Container */
 .app-viewport {
   width: 100%;
   min-height: 100vh;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 5vh 24px 24px;
+  padding: 5vh 24px 80px;
+  box-sizing: border-box;
+}
+
+/* Site Footer */
+.site-footer {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 36px 20px 56px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.footer-logo {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--theme-accent);
+  text-decoration: none;
+  letter-spacing: -0.3px;
+  display: inline-block;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.footer-logo:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 18px 28px;
+  margin-bottom: 2px;
+}
+
+.footer-link {
+  color: var(--theme-accent);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  text-decoration: none;
+  text-transform: uppercase;
+  opacity: 0.75;
+  transition: opacity 0.2s ease;
+}
+
+.footer-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footer-contact {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--theme-accent);
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.footer-email-link {
+  color: var(--theme-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 400;
+  transition: opacity 0.2s ease;
+}
+
+.footer-email-link:hover {
+  opacity: 1;
+}
+
+.footer-copyright {
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: var(--theme-accent);
+  opacity: 0.6;
+  letter-spacing: 0.2px;
+}
+
+/* Legal Pages (Privacy / Terms) */
+.legal-card {
+  width: 100%;
+  max-width: 760px;
+  background-color: var(--theme-card-bg);
+  border-radius: 36px;
+  padding: 44px 48px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  color: var(--theme-accent);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  transition: background-color 0.6s ease;
+}
+
+.legal-header {
+  border-bottom: 2px solid rgba(239, 247, 207, 0.2);
+  padding-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legal-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.legal-header .legal-subtitle {
+  font-size: 0.88rem;
+  opacity: 0.82;
+  font-weight: 500;
+}
+
+.legal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  line-height: 1.68;
+  font-size: 0.96rem;
+}
+
+.legal-section h2 {
+  font-size: 1.22rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.2px;
+}
+
+.legal-section p {
+  opacity: 0.92;
+  margin-bottom: 8px;
+}
+
+.legal-section ul {
+  margin-left: 20px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legal-section li {
+  opacity: 0.9;
+}
+
+.legal-section strong {
+  font-weight: 700;
+  opacity: 1;
+}
+
+.legal-section a {
+  color: var(--theme-accent);
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--theme-accent);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  background: rgba(239, 247, 207, 0.15);
+  padding: 8px 16px;
+  border-radius: 20px;
+  align-self: flex-start;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.back-btn:hover {
+  background: rgba(239, 247, 207, 0.28);
+  transform: translateX(-2px);
 }
 
 /* Main Card Component */
@@ -1126,8 +1312,40 @@ body {
 /* Mobile (≤ 640px) */
 @media (max-width: 640px) {
   .app-viewport {
-    padding: 12px 10px 16px;
+    padding: 10px 12px 60px;
     align-items: flex-start;
+    min-height: calc(100vh - 55px);
+  }
+
+  .site-footer {
+    padding: 28px 16px 44px;
+    max-width: calc(100% - 32px);
+    gap: 8px;
+  }
+
+  .footer-nav {
+    gap: 12px 18px;
+  }
+
+  .footer-link {
+    font-size: 0.74rem;
+  }
+
+  .footer-contact {
+    font-size: 0.76rem;
+  }
+
+  .footer-copyright {
+    font-size: 0.7rem;
+  }
+
+  .legal-card {
+    padding: 28px 20px;
+    border-radius: 26px;
+  }
+
+  .legal-header h1 {
+    font-size: 1.6rem;
   }
 
   .pomodoro-card {
