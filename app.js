@@ -147,51 +147,54 @@
     }
   }
 
+  let lastCheckedDayKey = null;
+
   function checkDayRollover() {
     const currentTodayKey = getDayKey(new Date());
+    if (lastCheckedDayKey === null) {
+      lastCheckedDayKey = currentTodayKey;
+      return;
+    }
 
-    state.sessionsHistory.forEach(s => {
-      const dateObj = s.id ? new Date(s.id) : new Date();
-      const dayKey = getDayKey(dateObj);
-      const secs = s.cancelled ? (s.workSec || 0) : (s.totalSec !== undefined ? s.totalSec : ((s.workSec || 0) + (s.otSec || 0)));
-      if (dayKey < currentTodayKey) {
-        state.dailyLog[dayKey] = (state.dailyLog[dayKey] || 0) + secs;
-      }
-    });
-
-    const todaySessions = state.sessionsHistory.filter(s => {
-      const dateObj = s.id ? new Date(s.id) : new Date();
-      return getDayKey(dateObj) === currentTodayKey;
-    });
-
-    if (todaySessions.length !== state.sessionsHistory.length) {
-      state.sessionsHistory = todaySessions;
-      state.currentPage = Math.max(1, Math.ceil(state.sessionsHistory.length / state.pageSize));
-      saveHistory();
+    if (lastCheckedDayKey !== currentTodayKey) {
+      lastCheckedDayKey = currentTodayKey;
+      rebuildDailyLog();
+      renderSummary();
     }
   }
 
   function rebuildDailyLog() {
-    const log = { ...state.dailyLog };
     const currentTodayKey = getDayKey(new Date());
+    const log = { ...state.dailyLog };
 
-    let todaySecs = 0;
+    // Calculate sum of sessions for each day currently present in sessionsHistory
+    const sessionsByDay = {};
+    const daysInHistory = new Set();
+
     state.sessionsHistory.forEach(s => {
       const dateObj = s.id ? new Date(s.id) : new Date();
-      const dayKey = getDayKey(dateObj);
-      const secs = s.cancelled ? (s.workSec || 0) : (s.totalSec !== undefined ? s.totalSec : ((s.workSec || 0) + (s.otSec || 0)));
-      if (dayKey === currentTodayKey) {
-        todaySecs += secs;
-      } else {
-        log[dayKey] = (log[dayKey] || 0) + secs;
-      }
+      const dayKey = s.dayKey || getDayKey(dateObj);
+      s.dayKey = dayKey; // Ensure dayKey is set on session object
+
+      const totalSec = s.totalSec !== undefined ? s.totalSec : ((s.workSec || 0) + (s.otSec || 0));
+      sessionsByDay[dayKey] = (sessionsByDay[dayKey] || 0) + totalSec;
+      daysInHistory.add(dayKey);
     });
 
-    if (todaySecs > 0) {
-      log[currentTodayKey] = todaySecs;
-    } else {
-      delete log[currentTodayKey];
-    }
+    // Authoritatively set the daily total for all days present in sessionsHistory
+    daysInHistory.forEach(dayKey => {
+      log[dayKey] = sessionsByDay[dayKey];
+    });
+
+    // Ensure today's entry reflects today's sessions sum (or 0 if none)
+    log[currentTodayKey] = sessionsByDay[currentTodayKey] || 0;
+
+    // Clean up empty or invalid entries for past days
+    Object.keys(log).forEach(key => {
+      if (key !== currentTodayKey && (!log[key] || log[key] <= 0)) {
+        delete log[key];
+      }
+    });
 
     state.dailyLog = log;
     try {
@@ -279,6 +282,10 @@
 
   // Study "day" runs 3:00 AM → 2:59 AM. Shift back 3 hours to get the correct date key.
   function getDayKey(dateObj) {
+    if (!dateObj) dateObj = new Date();
+    if (typeof dateObj === 'number' || typeof dateObj === 'string') {
+      dateObj = new Date(dateObj);
+    }
     const shifted = new Date(dateObj.getTime() - 3 * 60 * 60 * 1000);
     const y = shifted.getFullYear();
     const mo = String(shifted.getMonth() + 1).padStart(2, '0');
@@ -345,20 +352,22 @@
 
     // Record cancelled pomodoro session to history if time elapsed
     let elapsed = 0;
-    if (state.timerState === 'running' && state.mode === 'work') {
-      elapsed = (state.workDuration || 0) - state.remainingSeconds;
+    if ((state.timerState === 'running' || state.timerState === 'paused') && state.mode === 'work') {
+      elapsed = Math.max(0, (state.workDuration || 0) - state.remainingSeconds);
     } else if (state.timerState === 'overtime') {
-      elapsed = (state.workDuration || 0) + state.overtimeSeconds;
+      elapsed = (state.workDuration || 0) + (state.overtimeSeconds || 0);
     }
 
     if (elapsed > 0 && state.sessionStartTimestamp) {
       const now = new Date();
       const endTime = formatHHMM(now);
       const workSec = Math.min(elapsed, state.workDuration || 0);
-      const otSec = state.overtimeSeconds || 0;
+      const otSec = state.timerState === 'overtime' ? (state.overtimeSeconds || 0) : 0;
+      const dayKey = getDayKey(now);
 
       state.sessionsHistory.push({
         id: Date.now(),
+        dayKey: dayKey,
         startTime: state.sessionStartTimestamp,
         endTime: endTime,
         workSec: workSec,
@@ -366,10 +375,6 @@
         totalSec: elapsed,
         cancelled: true
       });
-
-      // Track in daily log (use workSec only, not overtime, for cancelled sessions)
-      const dayKey = getDayKey(now);
-      state.dailyLog[dayKey] = (state.dailyLog[dayKey] || 0) + workSec;
 
       saveHistory();
       rebuildDailyLog();
@@ -444,18 +449,21 @@
   function logCompletedSession() {
     const now = new Date();
     const endTime = formatHHMM(now);
-    const startTime = state.sessionStartTimestamp || endTime;
     const workSec = (state.workDuration !== null && !isNaN(state.workDuration)) ? state.workDuration : 0;
     const otSec = state.overtimeSeconds || 0;
     const totalSec = workSec + otSec;
+    const startTime = state.sessionStartTimestamp || formatHHMM(new Date(now.getTime() - totalSec * 1000));
+    const dayKey = getDayKey(now);
 
     state.sessionsHistory.push({
       id: Date.now(),
+      dayKey: dayKey,
       startTime: startTime,
       endTime: endTime,
       workSec: workSec,
       otSec: otSec,
-      totalSec: totalSec
+      totalSec: totalSec,
+      cancelled: false
     });
 
     state.overtimeSeconds = 0;
@@ -518,11 +526,45 @@
 
   function switchMode(newMode) {
     if (state.mode === newMode) return;
+
+    // If leaving work mode while timer was running/paused with elapsed work time, preserve and log it!
+    if (state.mode === 'work') {
+      let elapsed = 0;
+      if (state.timerState === 'overtime') {
+        elapsed = (state.workDuration || 0) + (state.overtimeSeconds || 0);
+      } else if (state.timerState === 'running' || state.timerState === 'paused') {
+        elapsed = Math.max(0, (state.workDuration || 0) - state.remainingSeconds);
+      }
+
+      if (elapsed > 0 && state.sessionStartTimestamp) {
+        const now = new Date();
+        const endTime = formatHHMM(now);
+        const workSec = Math.min(elapsed, state.workDuration || 0);
+        const otSec = state.timerState === 'overtime' ? (state.overtimeSeconds || 0) : 0;
+        const dayKey = getDayKey(now);
+
+        state.sessionsHistory.push({
+          id: Date.now(),
+          dayKey: dayKey,
+          startTime: state.sessionStartTimestamp,
+          endTime: endTime,
+          workSec: workSec,
+          otSec: otSec,
+          totalSec: elapsed,
+          cancelled: true
+        });
+
+        saveHistory();
+        rebuildDailyLog();
+      }
+    }
+
     clearInterval(state.timerInterval);
 
     state.mode = newMode;
     state.timerState = 'stopped';
     state.overtimeSeconds = 0;
+    state.sessionStartTimestamp = null;
 
     if (newMode === 'work') {
       state.remainingSeconds = (state.workDuration !== null && !isNaN(state.workDuration)) ? state.workDuration : 0;
@@ -871,7 +913,12 @@
     const hrs = Math.floor(totalWorkSec / 3600);
     const mins = Math.floor((totalWorkSec % 3600) / 60);
     statTotalTime.textContent = `${String(hrs).padStart(2, '0')} hrs ${String(mins).padStart(2, '0')} mins`;
-    statSessionCount.textContent = String(state.sessionsHistory.length).padStart(2, '0');
+
+    const todaySessionsCount = state.sessionsHistory.filter(s => {
+      const dayKey = s.dayKey || getDayKey(s.id ? new Date(s.id) : new Date());
+      return dayKey === currentTodayKey;
+    }).length;
+    statSessionCount.textContent = String(todaySessionsCount).padStart(2, '0');
 
     // --- Tab switching ---
     const isSessionsTab = state.summaryTab === 'sessions';
@@ -891,7 +938,18 @@
     // Grid population
     sessionsGrid.innerHTML = '';
     const sessionsTip = document.getElementById('sessionsTip');
-    const totalItems = state.sessionsHistory.length;
+    const currentTodayKey = getDayKey(new Date());
+
+    // Only display today's sessions on the Sessions panel
+    const todaySessionsWithIndex = [];
+    state.sessionsHistory.forEach((session, index) => {
+      const dayKey = session.dayKey || getDayKey(session.id ? new Date(session.id) : new Date());
+      if (dayKey === currentTodayKey) {
+        todaySessionsWithIndex.push({ session, index });
+      }
+    });
+
+    const totalItems = todaySessionsWithIndex.length;
 
     if (totalItems === 0) {
       sessionsGrid.innerHTML = `<div class="no-sessions">No completed sessions yet</div>`;
@@ -901,7 +959,7 @@
 
     if (sessionsTip) sessionsTip.style.display = 'block';
 
-    state.sessionsHistory.forEach((session, absoluteIndex) => {
+    todaySessionsWithIndex.forEach(({ session, index: absoluteIndex }) => {
       const totalSec = session.totalSec !== undefined ? session.totalSec : ((session.workSec || 0) + (session.otSec || 0));
       const totalDurMin = Math.round(totalSec / 60);
       const cancelTag = session.cancelled ? ' (cancelled)' : '';
@@ -1008,9 +1066,9 @@
 
     const currentTodayKey = getDayKey(new Date());
 
-    // Include only study days that have ended (strictly prior to today's active study day key)
+    // Include all study days with work time > 0, sorted descending by date (most recent first)
     const entries = Object.entries(state.dailyLog)
-      .filter(([key]) => key < currentTodayKey)
+      .filter(([key, secs]) => secs > 0)
       .sort((a, b) => b[0].localeCompare(a[0]));
 
     if (entries.length === 0) {
@@ -1027,12 +1085,19 @@
       let timeStr;
       if (h > 0) {
         timeStr = `${h}h ${String(m).padStart(2, '0')}m`;
-      } else {
+      } else if (m > 0) {
         timeStr = `${m}m`;
+      } else if (secs > 0) {
+        timeStr = '< 1m';
+      } else {
+        timeStr = '0m';
       }
 
+      const isToday = key === currentTodayKey;
+      const todayBadgeHtml = isToday ? '<span class="daily-today-badge">TODAY</span>' : '';
+
       itemEl.innerHTML = `
-        <span class="daily-log-date">${formatDayLabel(key)}</span>
+        <span class="daily-log-date">${formatDayLabel(key)} ${todayBadgeHtml}</span>
         <span class="daily-log-time">${timeStr}</span>
       `;
       dailyLogGrid.appendChild(itemEl);
@@ -1099,6 +1164,7 @@
         workSec: newWorkSec,
         otSec: newOtSec
       };
+      saveHistory();
       rebuildDailyLog();
       renderSummary();
     }
@@ -1121,6 +1187,7 @@
 
   function removeSession(sessionIndex) {
     state.sessionsHistory.splice(sessionIndex, 1);
+    saveHistory();
     rebuildDailyLog();
     renderSummary();
   }
@@ -1322,10 +1389,10 @@
         if (confirm("Are you sure you want to clear today's sessions?")) {
           const todayKey = getDayKey(new Date());
           state.sessionsHistory = state.sessionsHistory.filter(s => {
-            const dateObj = s.id ? new Date(s.id) : new Date();
-            return getDayKey(dateObj) !== todayKey;
+            const dayKey = s.dayKey || getDayKey(s.id ? new Date(s.id) : new Date());
+            return dayKey !== todayKey;
           });
-          state.currentPage = 1;
+          state.dailyLog[todayKey] = 0;
           saveHistory();
           rebuildDailyLog();
           renderSummary();
